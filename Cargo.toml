@@ -1,12 +1,11 @@
 [workspace]
 resolver = "3"
-members = ["cue_*"]
+members = ["smt-*", "crates/smt_*"]
 
 [profile.release]
 lto = true
 strip = true
 codegen-units = 1
-opt-level = 3
 
 [workspace.package]
 version = "0.1.0"
@@ -15,3 +14,12 @@ authors = ["Timur Olur <pm@smdd.dev>"]
 documentation = "https://github.com/SuperioOne/cue_rs"
 homepage = "https://github.com/SuperioOne/cue_rs"
 repository = "https://github.com/SuperioOne/cue_rs"
+rust-version = "1.95"
+
+[workspace.dependencies]
+cue_lib = { version = "0.1" }
+clap = { version = "4", features = ["derive"] }
+serde = { version = "1", features = ["serde_derive"] }
+serde_json = { version = "1" }
+smt_ffmpeg = { path = "./crates/smt_ffmpeg" }
+smt_common = { path = "./crates/smt_common" }

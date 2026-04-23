@@ -1,0 +1,15 @@
+[package]
+name = "smt_ffmpeg"
+description = "cue_tool specific functions for splitting audio streams and setting metadata using a subset of ffmpeg's libav."
+license = "GPL-2.0"
+edition.workspace = true
+version.workspace = true
+authors.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+smt_ffmpeg_sys = { path = "../smt_ffmpeg_sys" }
