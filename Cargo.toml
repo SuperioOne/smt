@@ -11,9 +11,9 @@ codegen-units = 1
 version = "0.1.0"
 edition = "2024"
 authors = ["Timur Olur <pm@smdd.dev>"]
-documentation = "https://github.com/SuperioOne/cue_rs"
-homepage = "https://github.com/SuperioOne/cue_rs"
-repository = "https://github.com/SuperioOne/cue_rs"
+documentation = "https://codeberg.org/SuperiorOne/smt"
+homepage = "https://codeberg.org/SuperiorOne/smt"
+repository = "https://codeberg.org/SuperiorOne/smt"
 rust-version = "1.95"
 
 [workspace.dependencies]
