@@ -1,0 +1,163 @@
+.TH smt-split 1 "2026-04-25" "0.1.0" "SMT User Manual"
+.SH NAME
+.PP
+smt-split \- SMT CUE sheet split
+.SH SYNOPSIS
+.PP
+smt-split [\fB\-i\fR|\fB\-\-input\fR \fI<PATH>\fR]
+          [\fB\-f\fR|\fB\-\-file-path\fR \fI<PATH>\fR]
+          [\fB\-o\fR|\fB\-\-output-dir\fR \fI<PATH>\fR]
+          [\fB\-m\fR|\fB\-\-metadata\fR]
+          [\fB\-\-verbose\fR \fI<VERBOSE>\fR]
+          [\fB\-h\fR|\fB\-\-help\fR]
+          [\fB\-V\fR|\fB\-\-version\fR]
+.SH DESCRIPTION
+.PP
+\fBsmt-split\fR splits common audio formats by using cuesheet
+information. It reads cuesheet file and splits audio file into
+individual tracks based on the track information contained within
+the CUE sheet.
+
+.PP
+Split operation also automatically trims track pregap (INDEX 00),
+and sets all available metadata for each track.
+
+.PP
+\fBsmt-split\fR internally uses \fIlibavformat\fR and \fIlibavcodec\fR
+, which allows support for a wide range of codec and container formats.
+However, it is focused only on splitting audio files by using CUE sheet
+information. If you also need to transcode audio formats, use \fBffmpeg\fR(1).
+
+.SH OPTIONS
+.TP
+.BR \-i ", " \-\-input
+Set CUE sheet input file path. If not set, \fBstdin(3)\fR is used as CUE sheet input.
+.TP
+.BR \-\-verbose
+Set verbosity level. Allowed values are
+.BR full ", " default ", " quiet
+.TP
+.BR \-f ", " \-\-file-path
+If given path is a file, overrides FILE command with the given path.
+
+If given path is a directory, uses it as a root directory for CUE sheet FILE command.
+
+By default, uses CUE sheet's parent directory.
+.TP
+.BR \-o ", " \-\-output-dir
+Set output directory for the splitted tracks.
+
+This option automatically creates parent directories if they do not exists. 
+
+By default, uses current directory.
+.TP
+.BR \-m ", " \-\-metadata
+Enable additional Vorbis comments from CUE sheet remarks.
+.IP
+For more details about how Vorbis comments are parsed from remarks, see \fBsmt-cue\fR(7).
+.TP
+.BR \-h ", " \-\-help
+Print help menu and exit.
+.TP
+.BR \-V ", " \-\-version
+Print version and exit.
+
+.SH EXAMPLE
+
+.SS Basic splitting:
+
+.TS
+tab(@);
+l lx.
+\fBCUE\fR@T{
+"./example.cue"
+T}
+\fBAUDIO\fR@T{
+"./example.wav"
+T}
+.TE
+
+.EX
+smt-split -m -i example.cue
+.EE
+
+.SS Splitting from different directory:
+
+.TS
+tab(@);
+l lx.
+\fBCUE\fR@T{
+"/path/to/example.cue"
+T}
+\fBAUDIO\fR@T{
+"/path/to/example.wav"
+T}
+.TE
+
+.EX
+smt-split -m -i /path/to/example.cue
+.EE
+
+.SS Overriding FILE directory:
+
+.TS
+tab(@);
+l lx.
+\fBCUE\fR@T{
+"/path/to/example.cue"
+T}
+\fBAUDIO\fR@T{
+"/path/different/example.wav"
+T}
+.TE
+
+.EX
+smt-split -m -i /path/to/example.cue -f /path/different/
+.EE
+
+.SS Overriding FILE path:
+
+.TS
+tab(@);
+l lx.
+\fBCUE\fR@T{
+"/path/to/example.cue"
+T}
+\fBAUDIO\fR@T{
+"/path/different/target.flac"
+T}
+.TE
+
+.EX
+smt-split -m -i /path/to/example.cue -f /path/different/target.flac
+.EE
+
+.SS Custom output directory:
+
+.EX
+smt-split -m -i example.cue -o /tmp/album/
+.EE
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful program execution.
+.TP
+.B 1
+Usage, encoder, decoder, or invalid CUE sheet errors.
+
+.SH BUGS
+.TP
+.B Codeberg
+https://codeberg.org/SuperiorOne/smt/issues
+.TP
+.B GitHub
+https://github.com/SuperioOne/smt/issues
+.TP
+.B Email
+pm@smdd.dev
+
+.SH SEE ALSO
+.BR smt-parse (1),
+.BR smt-cue (7),
+.BR ffmpeg (1)
