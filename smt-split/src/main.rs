@@ -1,12 +1,11 @@
 use self::split::CmdSplit;
 use clap::Parser;
 use smt_common::{VerboseLevel, input_reader::read_input, output_error::OutputError};
-use smt_ffmpeg::{AvLogLevel, avlib_log_level};
+use smt_ffmpeg::avlib_log_level;
 use std::{path::PathBuf, process::ExitCode};
 
 mod demux;
 mod error;
-mod metadata;
 mod split;
 
 #[derive(Parser, Debug)]
@@ -51,13 +50,7 @@ fn main() -> ExitCode {
         _ => None,
       });
 
-  let av_verbosity = match verbosity {
-    VerboseLevel::Default => AvLogLevel::Error,
-    VerboseLevel::Full => AvLogLevel::Info,
-    VerboseLevel::Quiet => AvLogLevel::Quiet,
-  };
-
-  avlib_log_level(av_verbosity);
+  avlib_log_level(verbosity.into());
 
   stderr.set_input_buffer(cuesheet.as_str());
 

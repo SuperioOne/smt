@@ -1,12 +1,12 @@
 use crate::{common::unsafe_av_result, error::AvError};
 use smt_ffmpeg_sys::{
-  AV_DICT_IGNORE_SUFFIX, AV_DICT_MULTIKEY, AVDictionary, AVDictionaryEntry, av_dict_count,
-  av_dict_get, av_dict_iterate, av_dict_set,
+  AV_DICT_DEDUP, AV_DICT_IGNORE_SUFFIX, AV_DICT_MULTIKEY, AVDictionary, AVDictionaryEntry,
+  av_dict_copy, av_dict_count, av_dict_free, av_dict_get, av_dict_iterate, av_dict_set,
 };
 use std::{
   borrow::Borrow,
   ffi::{CStr, CString},
-  ptr::null,
+  ptr::{null, null_mut},
   str::FromStr,
 };
 
@@ -96,6 +96,10 @@ macro_rules! impl_shared_fns {
 }
 
 impl_shared_fns!('a, AvDictionaryRef<'a>);
+impl_shared_fns!('a, AvDictionaryMut<'a>);
+
+/// Random null-terminator in middle of a [`str`] is not expected.
+const CSTR_PANIC_MESSAGE: &'static str = "unexpected null terminator on rust str";
 
 impl<'a> AvDictionaryRef<'a> {
   #[inline]
@@ -110,31 +114,63 @@ impl<'a> AvDictionaryMut<'a> {
     Self { inner: dictionary }
   }
 
-  pub fn override_entry<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
-  where
-    K: Borrow<str>,
-    V: Borrow<str>,
-  {
-    self.internal_set(key, value, 0)
-  }
-
   pub fn set<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
   where
     K: Borrow<str>,
     V: Borrow<str>,
   {
-    self.internal_set(key, value, (AV_DICT_MULTIKEY) as i32)
+    let key = CString::from_str(key.borrow()).expect(CSTR_PANIC_MESSAGE);
+    let value = CString::from_str(value.borrow()).expect(CSTR_PANIC_MESSAGE);
+    self.set_cstr(key, value)
   }
 
-  fn internal_set<K, V>(&mut self, key: K, value: V, flag: i32) -> Result<(), AvError>
+  pub fn push<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
   where
     K: Borrow<str>,
     V: Borrow<str>,
   {
-    let key = CString::from_str(key.borrow()).expect("unexpected null terminator on rust str");
-    let value = CString::from_str(value.borrow()).expect("unexpected null terminator on rust str");
+    let key = CString::from_str(key.borrow()).expect(CSTR_PANIC_MESSAGE);
+    let value = CString::from_str(value.borrow()).expect(CSTR_PANIC_MESSAGE);
+    self.push_cstr(key, value)
+  }
 
-    unsafe_av_result!(av_dict_set(self.inner, key.as_ptr(), value.as_ptr(), flag))
+  pub fn clear(&mut self) {
+    unsafe {
+      av_dict_free(self.inner);
+    }
+    *self.inner = null_mut();
+  }
+
+  #[inline]
+  pub fn set_cstr<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
+  where
+    K: Borrow<CStr>,
+    V: Borrow<CStr>,
+  {
+    unsafe_av_result!(av_dict_set(
+      self.inner,
+      key.borrow().as_ptr(),
+      value.borrow().as_ptr(),
+      AV_DICT_DEDUP as i32
+    ))
+  }
+
+  #[inline]
+  pub fn push_cstr<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
+  where
+    K: Borrow<CStr>,
+    V: Borrow<CStr>,
+  {
+    unsafe_av_result!(av_dict_set(
+      self.inner,
+      key.borrow().as_ptr(),
+      value.borrow().as_ptr(),
+      (AV_DICT_MULTIKEY | AV_DICT_DEDUP) as i32
+    ))
+  }
+
+  pub fn try_copy_from(&mut self, dictionary: &'a AvDictionaryRef<'_>) -> Result<(), AvError> {
+    unsafe_av_result!(av_dict_copy(self.inner, *dictionary.inner, 0))
   }
 }
 

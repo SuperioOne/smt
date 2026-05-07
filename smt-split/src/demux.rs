@@ -7,11 +7,9 @@
 // Disclaimer:
 // Some brain cells were harmed while encoding flacs with proper duration header.
 
-use super::{
-  error::SplitError,
-  metadata::{AvLibTagger, CodecMetadataTagger, Id3Tagger, MetadataContainer, VorbisTagger},
-};
+use super::error::SplitError;
 use cue_lib::{core::CueStr, parse::Cuesheet};
+use smt_common::metadata::MetadataContainer;
 use smt_ffmpeg::{
   codec::{context::AvCodecContext, frame::AvFrame, packet::AvPacket},
   error::{AvError, AvLibError},
@@ -38,10 +36,6 @@ const COVER_IMAGE_VALUE: &'static CStr = static_cstr!("Cover (front)");
 const EXT_FLAC: &'static str = "flac";
 const EXT_MP3: &'static str = "mp3";
 const UNTITLED_TRACK: CueStr<'static> = CueStr::Text("untitled");
-
-static AV_LIB_TAGGER: AvLibTagger = AvLibTagger;
-static ID3_TAGGER: Id3Tagger = Id3Tagger;
-static VORBIS_TAGGER: VorbisTagger = VorbisTagger;
 
 struct SplitOutput {
   start_time: AvTimestamp,
@@ -93,18 +87,16 @@ impl SplitDemuxer {
       })?;
 
     let audio_codec = unsafe { &*audio_stream.codecpar };
-
-    let (file_extension, tagger) = match audio_codec.codec_id {
+    let file_extension = match audio_codec.codec_id {
       AVCodecID_AV_CODEC_ID_MP3 | AVCodecID_AV_CODEC_ID_MP3ADU | AVCodecID_AV_CODEC_ID_MP3ON4 => {
-        (EXT_MP3, &ID3_TAGGER as &dyn CodecMetadataTagger)
+        EXT_MP3
       }
-      AVCodecID_AV_CODEC_ID_FLAC => (EXT_FLAC, &VORBIS_TAGGER as &dyn CodecMetadataTagger),
+      AVCodecID_AV_CODEC_ID_FLAC => EXT_FLAC,
       _ => input_path
         .as_ref()
         .extension()
         .map(|v| v.to_str())
         .flatten()
-        .map(|v| (v, &AV_LIB_TAGGER as &dyn CodecMetadataTagger))
         .ok_or(SplitError::UnknownAudioContainer)?,
     };
 
@@ -150,12 +142,12 @@ impl SplitDemuxer {
         copy_stream_properties(cover, output_cover_stream)?;
       }
 
-      let mut output_metadata = MetadataContainer::new(context.metadata_mut(), tagger);
+      let mut output_metadata = MetadataContainer::from_output_context(&mut context);
       let input_metadata = input.metadata();
 
-      output_metadata.insert_from_av_dict(input_metadata.iter());
-      output_metadata.insert_from_cuesheet(cuesheet);
-      output_metadata.insert_from_track(track_info);
+      output_metadata.push_from_av_dict(input_metadata.iter());
+      output_metadata.push_from_cuesheet(cuesheet);
+      output_metadata.push_from_track(track_info);
 
       outputs.push(SplitOutput {
         context,

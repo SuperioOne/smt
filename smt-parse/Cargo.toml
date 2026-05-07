@@ -2,7 +2,7 @@
 name = "smt-parse"
 description = "cuesheet parse tool"
 keywords = ["cue", "cuesheet", "file-format", "cli", "cli-tool"]
-license = "GPL-2.0"
+license.workspace = true
 authors.workspace = true
 documentation.workspace = true
 edition.workspace = true

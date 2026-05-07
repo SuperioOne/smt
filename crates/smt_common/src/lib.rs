@@ -1,7 +1,9 @@
 use self::output_error::ErrorFormat;
 use clap::ValueEnum;
+use smt_ffmpeg::AvLogLevel;
 
 pub mod input_reader;
+pub mod metadata;
 pub mod output_error;
 pub mod output_writer;
 
@@ -26,4 +28,15 @@ where
   type Error;
 
   fn run(self) -> Result<(), Self::Error>;
+}
+
+impl Into<AvLogLevel> for VerboseLevel {
+  #[inline]
+  fn into(self) -> AvLogLevel {
+    match self {
+      Self::Default => AvLogLevel::Error,
+      Self::Full => AvLogLevel::Info,
+      Self::Quiet => AvLogLevel::Quiet,
+    }
+  }
 }

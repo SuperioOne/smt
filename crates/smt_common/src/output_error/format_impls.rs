@@ -77,3 +77,12 @@ impl ErrorFormat for std::io::Error {
     }
   }
 }
+
+impl ErrorFormat for smt_ffmpeg::error::AvError {
+  fn fmt(&self, mut f: ErrorFormatter<'_>, _: &str, verbose: VerboseLevel) -> std::io::Result<()> {
+    match verbose {
+      VerboseLevel::Quiet => Ok(()),
+      _ => f.writeln_error(format_args!("{}", &self)),
+    }
+  }
+}

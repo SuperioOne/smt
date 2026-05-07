@@ -84,6 +84,20 @@ impl StreamType {
   }
 }
 
+impl PartialEq<i32> for StreamType {
+  #[inline]
+  fn eq(&self, other: &i32) -> bool {
+    self.as_i32() == *other
+  }
+}
+
+impl PartialEq<StreamType> for i32 {
+  #[inline]
+  fn eq(&self, other: &StreamType) -> bool {
+    *self == other.as_i32()
+  }
+}
+
 impl<'a> StreamIter<'a> {
   #[inline]
   pub const fn from_context(context: &'a AVFormatContext) -> Self {
