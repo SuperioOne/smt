@@ -419,10 +419,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "smt_ffmpeg_src"
+version = "0.1.0"
+
+[[package]]
 name = "smt_ffmpeg_sys"
 version = "0.1.0"
 dependencies = [
  "bindgen",
+ "smt_ffmpeg_src",
 ]
 
 [[package]]

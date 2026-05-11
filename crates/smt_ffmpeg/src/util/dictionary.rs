@@ -131,6 +131,7 @@ impl<'a> AvDictionaryMut<'a> {
   {
     let key = CString::from_str(key.borrow()).expect(CSTR_PANIC_MESSAGE);
     let value = CString::from_str(value.borrow()).expect(CSTR_PANIC_MESSAGE);
+
     self.push_cstr(key, value)
   }
 
@@ -151,7 +152,7 @@ impl<'a> AvDictionaryMut<'a> {
       self.inner,
       key.borrow().as_ptr(),
       value.borrow().as_ptr(),
-      AV_DICT_DEDUP as i32
+      0
     ))
   }
 
@@ -165,7 +166,7 @@ impl<'a> AvDictionaryMut<'a> {
       self.inner,
       key.borrow().as_ptr(),
       value.borrow().as_ptr(),
-      (AV_DICT_MULTIKEY | AV_DICT_DEDUP) as i32
+      AV_DICT_MULTIKEY as i32
     ))
   }
 

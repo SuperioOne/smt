@@ -1,14 +1,15 @@
 [package]
 name = "smt-metadata"
-description = "splits common audio formats by using cuesheet information"
-edition = "2024"
-license.workspace = true
-version.workspace = true
+description = "audio metadata editing tool"
 authors.workspace = true
 documentation.workspace = true
+edition.workspace = true
 homepage.workspace = true
+license.workspace = true
+publish = false
 repository.workspace = true
 rust-version.workspace = true
+version.workspace = true
 
 [dependencies]
 clap.workspace = true

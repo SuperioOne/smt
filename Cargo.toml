@@ -23,4 +23,6 @@ clap = { version = "4", features = ["derive"] }
 serde = { version = "1", features = ["serde_derive"] }
 serde_json = { version = "1" }
 smt_ffmpeg = { path = "./crates/smt_ffmpeg" }
+smt_ffmpeg_sys = { path = "./crates/smt_ffmpeg_sys" }
+smt_ffmpeg_src = { path = "./crates/smt_ffmpeg_src" }
 smt_common = { path = "./crates/smt_common" }

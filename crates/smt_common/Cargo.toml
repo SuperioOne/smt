@@ -1,15 +1,15 @@
 [package]
 name = "smt_common"
 description = "shared utility types and functions"
-license = "GPL-2.0"
 authors.workspace = true
 documentation.workspace = true
 edition.workspace = true
 homepage.workspace = true
+license.workspace = true
 publish = false
 repository.workspace = true
-version.workspace = true
 rust-version.workspace = true
+version.workspace = true
 
 [dependencies]
 cue_lib.workspace = true

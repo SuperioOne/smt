@@ -25,7 +25,7 @@ impl Command for CmdTagRemove {
 
   fn run(self) -> Result<(), Self::Error> {
     let mut context = MetadataEditContext::open(self.path)?;
-    context.copy_metadata_by_filter(|key| {
+    context.copy_metadata_by_filter(|key, _| {
       match key.to_str().map(|v| guess_metadata_from_str(v)) {
         Ok(Some(tag)) => tag != self.key,
         _ => true,

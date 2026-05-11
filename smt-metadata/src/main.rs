@@ -1,7 +1,6 @@
-use self::command::tag_append::CmdTagAppend;
-use self::command::tag_clear::CmdTagClear;
-use self::command::tag_remove::CmdTagRemove;
-use self::command::tag_set::CmdTagSet;
+use self::command::{
+  tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_remove::CmdTagRemove, tag_set::CmdTagSet,
+};
 use clap::{Parser, Subcommand};
 use cue_lib::metadata::vorbis::VorbisTag;
 use smt_common::{Command, VerboseLevel, output_error::OutputError};

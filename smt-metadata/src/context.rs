@@ -53,14 +53,15 @@ impl MetadataEditContext {
 
   pub fn copy_metadata_by_filter<F>(&mut self, predicate: F) -> Result<(), MetadataError>
   where
-    F: Fn(&CStr) -> bool,
+    F: Fn(&CStr, &CStr) -> bool,
   {
     let src_metadata = self.in_context.metadata();
     let mut out_metadata = self.out_context.metadata_mut();
 
     for (key, val) in src_metadata.iter() {
-      if predicate(key) {
-        out_metadata.set_cstr(key, val)?;
+      if predicate(key, val) {
+        println!("what {:?} {:?}", key, val);
+        out_metadata.push_cstr(key, val)?;
       }
     }
 

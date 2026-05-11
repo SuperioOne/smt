@@ -25,9 +25,13 @@ impl CmdTagSet {
 impl Command for CmdTagSet {
   type Error = MetadataError;
 
-  fn run(self) -> Result<(), Self::Error> {
+  fn run(mut self) -> Result<(), Self::Error> {
+    // self.values.dedup();
+
+    println!("tags {:?}", self.values);
+
     let mut context = MetadataEditContext::open(self.path)?;
-    context.copy_metadata_by_filter(|key| {
+    context.copy_metadata_by_filter(|key, _| {
       match key.to_str().map(|v| guess_metadata_from_str(v)) {
         Ok(Some(tag)) => tag != self.key,
         _ => true,
