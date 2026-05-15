@@ -31,7 +31,7 @@ where
   let dst = dst.as_ref();
 
   if !dst.exists() {
-    std::fs::create_dir_all(&dst)?;
+    std::fs::create_dir(&dst)?;
   }
 
   for entry in dir.flatten() {
@@ -106,7 +106,6 @@ impl AVLibBuilder {
     copy_recursive(SOURCE_DIR, &src_dir)?;
 
     let lib_dir = path.join("lib");
-    let inc_dir = path.join("include");
 
     let mut configure = std::process::Command::new(src_dir.join("configure"));
 
@@ -160,7 +159,10 @@ impl AVLibBuilder {
       return Err(BuildError::BuildFailure(build_error));
     }
 
-    Ok(BuildInfo { lib_dir, inc_dir })
+    Ok(BuildInfo {
+      lib_dir,
+      inc_dir: PathBuf::from(SOURCE_DIR),
+    })
   }
 }
 

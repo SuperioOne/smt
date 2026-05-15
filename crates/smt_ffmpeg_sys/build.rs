@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf, process::ExitCode};
+use std::{env, path::PathBuf};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum LinkageKind {
@@ -37,7 +37,7 @@ macro_rules! has_feature {
   }};
 }
 
-fn main() -> ExitCode {
+fn main() {
   let options = if has_feature!("vendored_static") {
     LinkOptions {
       src: LibSource::Local,
@@ -54,10 +54,6 @@ fn main() -> ExitCode {
       kind: LinkageKind::Dynamic,
     }
   };
-
-  println!("cargo::rustc-link-lib={}=avutil", options.kind);
-  println!("cargo::rustc-link-lib={}=avformat", options.kind);
-  println!("cargo::rustc-link-lib={}=avcodec", options.kind);
 
   let out_path = env::var("OUT_DIR")
     .map(|v| PathBuf::from(v).canonicalize().unwrap())
@@ -96,9 +92,10 @@ fn main() -> ExitCode {
     .write_to_file(out_path.join("bindings.rs"))
     .expect("couldn't write ffmpeg bindings");
 
-  println!("cargo::rerun-if-changed=wrapper.h");
+  println!("cargo::rustc-link-lib={}=avutil", options.kind);
+  println!("cargo::rustc-link-lib={}=avformat", options.kind);
+  println!("cargo::rustc-link-lib={}=avcodec", options.kind);
   println!("cargo::rerun-if-changed=build.rs");
+  println!("cargo::rerun-if-changed=wrapper.h");
   println!("cargo::rerun-if-changed=src");
-
-  ExitCode::SUCCESS
 }
