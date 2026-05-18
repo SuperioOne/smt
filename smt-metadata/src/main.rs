@@ -1,5 +1,6 @@
 use self::command::{
-  tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_remove::CmdTagRemove, tag_set::CmdTagSet,
+  tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_list::CmdTagList, tag_remove::CmdTagRemove,
+  tag_set::CmdTagSet,
 };
 use clap::{Parser, Subcommand};
 use cue_lib::metadata::vorbis::VorbisTag;
@@ -127,7 +128,9 @@ fn main() -> ExitCode {
       TagCommand::Remove { key } => {
         run!(CmdTagRemove::new(args.file, key))
       }
-      TagCommand::List { json } => todo!(),
+      TagCommand::List { json } => {
+        run!(CmdTagList::new(args.file).use_json_encoding(json))
+      }
       TagCommand::Edit => todo!(),
     },
   }

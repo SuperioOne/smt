@@ -48,7 +48,7 @@ pub fn find_tagger(context: &AvContext) -> Option<&'static dyn CodecMetadataTagg
     .map(|v| find_tagger_by_codec_id(v.codec_id))
 }
 
-pub fn guess_metadata_from_str(value: &str) -> Option<MetadataTag> {
+pub fn find_tag_from_str(value: &str) -> Option<MetadataTag> {
   if let Ok(av_tag) = AvLibTag::from_str(value) {
     Some(av_tag.into())
   } else if let Ok(id3_tag) = Id3Tag::from_str(value) {
@@ -122,14 +122,9 @@ impl<'a> MetadataContainer<'a> {
 
   pub fn push_from_av_dict(&mut self, iter: smt_ffmpeg::util::dictionary::Iter<'a>) {
     for (tag, value) in iter {
-      match (tag.to_str(), value.to_str()) {
-        (Ok(tag), Ok(value)) => {
-          if let Some(tag) = guess_metadata_from_str(tag) {
-            _ = self.push(tag, value);
-          }
-        }
-        _ => continue,
-      };
+      if let Some(tag) = find_tag_from_str(tag) {
+        _ = self.push(tag, value);
+      }
     }
   }
 

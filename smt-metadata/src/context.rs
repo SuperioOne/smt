@@ -9,7 +9,8 @@ use smt_ffmpeg::{
   },
 };
 use std::{
-  ffi::{CStr, OsString},
+  borrow::Cow,
+  ffi::OsString,
   fs, io,
   path::{Path, PathBuf},
 };
@@ -53,15 +54,15 @@ impl MetadataEditContext {
 
   pub fn copy_metadata_by_filter<F>(&mut self, predicate: F) -> Result<(), MetadataError>
   where
-    F: Fn(&CStr, &CStr) -> bool,
+    F: Fn(&str, &str) -> bool,
   {
     let src_metadata = self.in_context.metadata();
     let mut out_metadata = self.out_context.metadata_mut();
 
-    for (key, val) in src_metadata.iter() {
-      if predicate(key, val) {
-        println!("what {:?} {:?}", key, val);
-        out_metadata.push_cstr(key, val)?;
+    for (key, value) in src_metadata.iter() {
+      println!("KV {}:{}", key, value);
+      if predicate(key, value.as_ref()) {
+        out_metadata.push(key, value)?;
       }
     }
 

@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::{env, path::PathBuf};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -27,32 +28,26 @@ struct LinkOptions {
   kind: LinkageKind,
 }
 
-macro_rules! has_feature {
-  ($feat:literal) => {{
-    let name = format!(
-      "CARGO_FEATURE_{}",
-      $feat.trim().to_uppercase().replace("-", "_")
-    );
-    env::var(name).is_ok_and(|v| v == "1")
-  }};
-}
-
 fn main() {
-  let options = if has_feature!("vendored_static") {
-    LinkOptions {
-      src: LibSource::Local,
-      kind: LinkageKind::Static,
-    }
-  } else if has_feature!("vendored_dynamic") {
-    LinkOptions {
-      src: LibSource::Local,
-      kind: LinkageKind::Dynamic,
-    }
-  } else {
-    LinkOptions {
-      src: LibSource::System,
-      kind: LinkageKind::Dynamic,
-    }
+  cfg_select! {
+    feature = "vendored_static" => {
+      let options = LinkOptions {
+        src: LibSource::Local,
+        kind: LinkageKind::Static,
+      };
+    },
+    feature = "vendored_dynamic" => {
+      let options = LinkOptions {
+        src: LibSource::Local,
+        kind: LinkageKind::Dynamic,
+      };
+    },
+    _ => {
+      let options = LinkOptions {
+        src: LibSource::System,
+        kind: LinkageKind::Dynamic,
+      };
+    },
   };
 
   let out_path = env::var("OUT_DIR")
@@ -87,11 +82,16 @@ fn main() {
   };
 
   let bindings = bindgen.generate().expect("unable to generate bindings");
+  let bindings_path = out_path.join("bindings.rs");
 
   bindings
-    .write_to_file(out_path.join("bindings.rs"))
+    .write_to_file(&bindings_path)
     .expect("couldn't write ffmpeg bindings");
 
+  println!(
+    "cargo::rustc-env=FFMPEG_BINDINGS_PATH={}",
+    bindings_path.display()
+  );
   println!("cargo::rustc-link-lib={}=avutil", options.kind);
   println!("cargo::rustc-link-lib={}=avformat", options.kind);
   println!("cargo::rustc-link-lib={}=avcodec", options.kind);

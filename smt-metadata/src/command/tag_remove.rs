@@ -1,6 +1,6 @@
 use crate::{context::MetadataEditContext, error::MetadataError};
 use cue_lib::metadata::vorbis::VorbisTag;
-use smt_common::{Command, metadata::guess_metadata_from_str};
+use smt_common::{Command, metadata::find_tag_from_str};
 use std::path::{Path, PathBuf};
 
 pub struct CmdTagRemove {
@@ -25,11 +25,9 @@ impl Command for CmdTagRemove {
 
   fn run(self) -> Result<(), Self::Error> {
     let mut context = MetadataEditContext::open(self.path)?;
-    context.copy_metadata_by_filter(|key, _| {
-      match key.to_str().map(|v| guess_metadata_from_str(v)) {
-        Ok(Some(tag)) => tag != self.key,
-        _ => true,
-      }
+    context.copy_metadata_by_filter(|key, _| match find_tag_from_str(key) {
+      Some(tag) => tag != self.key,
+      _ => true,
     })?;
 
     context.commit()

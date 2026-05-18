@@ -3,7 +3,7 @@
 #![allow(non_snake_case)]
 #![allow(unnecessary_transmutes)]
 
-include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+include!(env!("FFMPEG_BINDINGS_PATH"));
 
 impl PartialEq for AVRational {
   #[inline]

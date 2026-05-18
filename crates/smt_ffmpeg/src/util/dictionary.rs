@@ -1,11 +1,24 @@
 use crate::{common::unsafe_av_result, error::AvError};
 use smt_ffmpeg_sys::{
-  AV_DICT_DEDUP, AV_DICT_IGNORE_SUFFIX, AV_DICT_MULTIKEY, AVDictionary, AVDictionaryEntry,
-  av_dict_copy, av_dict_count, av_dict_free, av_dict_get, av_dict_iterate, av_dict_set,
+  // AV_DICT_DEDUP,
+  AV_DICT_IGNORE_SUFFIX,
+  AV_DICT_MULTIKEY,
+  AVDictionary,
+  AVDictionaryEntry,
+  av_dict_copy,
+  av_dict_count,
+  av_dict_free,
+  av_dict_get,
+  av_dict_iterate,
+  av_dict_set,
 };
+
+const AV_DICT_DEDUP: u32 = 128;
+
 use std::{
-  borrow::Borrow,
+  borrow::{Borrow, Cow},
   ffi::{CStr, CString},
+  iter::Flatten,
   ptr::{null, null_mut},
   str::FromStr,
 };
@@ -85,11 +98,11 @@ macro_rules! impl_shared_fns {
         }
       }
 
-      pub fn iter(&$lf self) -> Iter<$lf> {
-        Iter {
-          dictionary: self.inner,
-          current: null(),
-        }
+      pub fn iter(&$lf self) -> Iter<'a> {
+        EntryIter {
+            dictionary: self.inner,
+            current: null()
+        }.flatten()
       }
     }
   };
@@ -100,6 +113,45 @@ impl_shared_fns!('a, AvDictionaryMut<'a>);
 
 /// Random null-terminator in middle of a [`str`] is not expected.
 const CSTR_PANIC_MESSAGE: &'static str = "unexpected null terminator on rust str";
+
+fn escape_value(value: &str) -> Cow<'_, str> {
+  let mut chars = value.chars().enumerate();
+  let mut escaped = String::new();
+
+  loop {
+    match chars.next() {
+      Some((idx, ';')) => {
+        escaped.reserve(value.len() + 1);
+        escaped.push_str(&value[..idx]);
+        escaped.push_str("\\;");
+        break;
+      }
+      None => return Cow::Borrowed(value),
+      _ => continue,
+    }
+  }
+
+  for (_, ch) in chars {
+    match ch {
+      ';' => {
+        escaped.push_str("\\;");
+      }
+      v => {
+        escaped.push(v);
+      }
+    }
+  }
+
+  Cow::Owned(escaped)
+}
+
+fn unescape_value(value: &str) -> Cow<'_, str> {
+  if value.contains("\\;") {
+    Cow::Owned(value.replace("\\;", ";"))
+  } else {
+    Cow::Borrowed(value)
+  }
+}
 
 impl<'a> AvDictionaryRef<'a> {
   #[inline]
@@ -120,8 +172,8 @@ impl<'a> AvDictionaryMut<'a> {
     V: Borrow<str>,
   {
     let key = CString::from_str(key.borrow()).expect(CSTR_PANIC_MESSAGE);
-    let value = CString::from_str(value.borrow()).expect(CSTR_PANIC_MESSAGE);
-    self.set_cstr(key, value)
+    let value = CString::from_str(&escape_value(value.borrow())).expect(CSTR_PANIC_MESSAGE);
+    unsafe { self.set_cstr(key, value) }
   }
 
   pub fn push<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
@@ -130,9 +182,8 @@ impl<'a> AvDictionaryMut<'a> {
     V: Borrow<str>,
   {
     let key = CString::from_str(key.borrow()).expect(CSTR_PANIC_MESSAGE);
-    let value = CString::from_str(value.borrow()).expect(CSTR_PANIC_MESSAGE);
-
-    self.push_cstr(key, value)
+    let value = CString::from_str(&escape_value(value.borrow())).expect(CSTR_PANIC_MESSAGE);
+    unsafe { self.push_cstr(key, value) }
   }
 
   pub fn clear(&mut self) {
@@ -142,8 +193,7 @@ impl<'a> AvDictionaryMut<'a> {
     *self.inner = null_mut();
   }
 
-  #[inline]
-  pub fn set_cstr<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
+  pub unsafe fn set_cstr<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
   where
     K: Borrow<CStr>,
     V: Borrow<CStr>,
@@ -156,8 +206,7 @@ impl<'a> AvDictionaryMut<'a> {
     ))
   }
 
-  #[inline]
-  pub fn push_cstr<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
+  pub unsafe fn push_cstr<K, V>(&mut self, key: K, value: V) -> Result<(), AvError>
   where
     K: Borrow<CStr>,
     V: Borrow<CStr>,
@@ -166,7 +215,7 @@ impl<'a> AvDictionaryMut<'a> {
       self.inner,
       key.borrow().as_ptr(),
       value.borrow().as_ptr(),
-      AV_DICT_MULTIKEY as i32
+      (AV_DICT_DEDUP | AV_DICT_MULTIKEY) as i32
     ))
   }
 
@@ -175,13 +224,21 @@ impl<'a> AvDictionaryMut<'a> {
   }
 }
 
-pub struct Iter<'a> {
+pub type Iter<'a> = Flatten<EntryIter<'a>>;
+
+pub struct EntryIter<'a> {
   dictionary: &'a *mut AVDictionary,
   current: *const AVDictionaryEntry,
 }
 
-impl<'a> Iterator for Iter<'a> {
-  type Item = (&'a CStr, &'a CStr);
+pub struct ValueIter<'a> {
+  key: &'a str,
+  value: &'a str,
+  cursor: usize,
+}
+
+impl<'a> Iterator for EntryIter<'a> {
+  type Item = ValueIter<'a>;
 
   fn next(&mut self) -> Option<Self::Item> {
     loop {
@@ -196,13 +253,66 @@ impl<'a> Iterator for Iter<'a> {
             // Kinda impossible case, skips current entry if tag or it's key is null
             continue;
           } else {
-            let key = CStr::from_ptr((*tag).key);
-            let value = CStr::from_ptr((*tag).value);
+            let key = CStr::from_ptr((*tag).key).to_str();
+            let value = CStr::from_ptr((*tag).value).to_str();
 
-            return Some((key, value));
+            match (key, value) {
+              (Ok(key), Ok(value)) => {
+                return Some(ValueIter {
+                  key,
+                  value,
+                  cursor: 0,
+                });
+              }
+              _ => continue,
+            }
           }
         }
       }
     }
+  }
+}
+
+impl<'a> Iterator for ValueIter<'a> {
+  type Item = (&'a str, Cow<'a, str>);
+
+  fn next(&mut self) -> Option<Self::Item> {
+    let start = self.cursor;
+
+    if start >= self.value.len() {
+      return None;
+    }
+
+    let target = &self.value[start..];
+    let mut end: Option<usize> = None;
+    let mut chars = target.chars();
+
+    'SEARCH: loop {
+      match chars.next() {
+        Some(';') => {
+          end = Some(self.cursor);
+          self.cursor += 1;
+          break 'SEARCH;
+        }
+        Some('\\') => {
+          _ = chars.next();
+          self.cursor += 2;
+        }
+        Some(_) => {
+          self.cursor += 1;
+        }
+        None => {
+          self.cursor += 1;
+          break 'SEARCH;
+        }
+      }
+    }
+
+    let value_slice = match end {
+      Some(end) => &self.value[start..end].trim(),
+      None => &self.value[start..].trim(),
+    };
+
+    Some((&self.key, unescape_value(*value_slice)))
   }
 }

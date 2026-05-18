@@ -1,6 +1,6 @@
 use crate::{context::MetadataEditContext, error::MetadataError};
 use cue_lib::metadata::vorbis::VorbisTag;
-use smt_common::{Command, metadata::guess_metadata_from_str};
+use smt_common::{Command, metadata::find_tag_from_str};
 use std::path::{Path, PathBuf};
 
 pub struct CmdTagAppend {
@@ -30,20 +30,17 @@ impl Command for CmdTagAppend {
 
     let mut context = MetadataEditContext::open(self.path)?;
     context.copy_metadata_by_filter(|key, val| {
-      match key.to_str().map(|v| guess_metadata_from_str(v)) {
-        Ok(Some(tag)) => {
+      match find_tag_from_str(key) {
+        Some(tag) => {
           if tag == self.key {
             for new_value in self.values.iter() {
-              if let Ok(existing_val) = val.to_str()
-                && existing_val == new_value.as_ref()
-              {
-                println!("skipping {}", existing_val);
+              if val == new_value.as_ref() {
                 return false;
               }
             }
           }
 
-          // fallback case
+          // catch-all case
           true
         }
         _ => true,
@@ -53,7 +50,7 @@ impl Command for CmdTagAppend {
     let mut metadata_map = context.metadata_mut();
 
     for value in self.values {
-      metadata_map.push(self.key, value);
+      metadata_map.push(self.key, value.as_ref());
     }
 
     context.commit()

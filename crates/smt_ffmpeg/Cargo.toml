@@ -11,5 +11,10 @@ repository.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
+[features]
+default = []
+vendored_static = [ "smt_ffmpeg_sys/vendored_static" ]
+vendored_dynamic = [ "smt_ffmpeg_sys/vendored_dynamic" ]
+
 [dependencies]
 smt_ffmpeg_sys.workspace = true
