@@ -1,23 +1,30 @@
 use crate::{context::MetadataEditContext, error::MetadataError};
 use smt_common::Command;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-pub struct CmdTagClear {
-  path: PathBuf,
+pub struct CmdTagClear<P>
+where
+  P: AsRef<Path>,
+{
+  path: P,
 }
 
-impl CmdTagClear {
-  pub fn new<P>(path: P) -> Self
+impl<P> CmdTagClear<P>
+where
+  P: AsRef<Path>,
+{
+  pub const fn new(path: P) -> Self
   where
     P: AsRef<Path>,
   {
-    Self {
-      path: path.as_ref().to_path_buf(),
-    }
+    Self { path }
   }
 }
 
-impl Command for CmdTagClear {
+impl<P> Command for CmdTagClear<P>
+where
+  P: AsRef<Path>,
+{
   type Error = MetadataError;
 
   fn run(self) -> Result<(), Self::Error> {

@@ -6,28 +6,35 @@ use std::{
   borrow::Cow,
   collections::BTreeMap,
   io::{BufWriter, stdout},
-  path::{Path, PathBuf},
+  path::Path,
 };
 
-pub struct CmdTagList {
-  path: PathBuf,
-  json_encoding: bool,
+pub struct CmdTagList<P>
+where
+  P: AsRef<Path>,
+{
+  path: P,
+  json_output: bool,
 }
 
-impl CmdTagList {
-  pub fn new<P>(path: P) -> Self
+impl<P> CmdTagList<P>
+where
+  P: AsRef<Path>,
+{
+  #[inline]
+  pub const fn new(path: P) -> Self
   where
     P: AsRef<Path>,
   {
     Self {
-      path: path.as_ref().to_path_buf(),
-      json_encoding: false,
+      path,
+      json_output: false,
     }
   }
 
   #[inline]
-  pub const fn use_json_encoding(mut self, value: bool) -> Self {
-    self.json_encoding = value;
+  pub const fn set_json_output(mut self, value: bool) -> Self {
+    self.json_output = value;
     self
   }
 }
@@ -62,14 +69,17 @@ fn display_json(metadata: AvDictionaryRef<'_>) -> Result<(), std::io::Error> {
   Ok(())
 }
 
-impl Command for CmdTagList {
+impl<P> Command for CmdTagList<P>
+where
+  P: AsRef<Path>,
+{
   type Error = MetadataError;
 
   fn run(self) -> Result<(), Self::Error> {
     let media = AvInputContext::open_path(self.path)?;
     let metadata = media.metadata();
 
-    if self.json_encoding {
+    if self.json_output {
       display_json(metadata)?;
     } else {
       display_text(metadata);

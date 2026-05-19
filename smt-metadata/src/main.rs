@@ -1,6 +1,6 @@
 use self::command::{
-  tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_list::CmdTagList, tag_remove::CmdTagRemove,
-  tag_set::CmdTagSet,
+  tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_edit::CmdTagEdit, tag_list::CmdTagList,
+  tag_remove::CmdTagRemove, tag_set::CmdTagSet,
 };
 use clap::{Parser, Subcommand};
 use cue_lib::metadata::vorbis::VorbisTag;
@@ -85,7 +85,11 @@ enum TagCommand {
     json: bool,
   },
   /// Edit metadata in interactive mode
-  Edit,
+  Edit {
+    /// Set text editor
+    #[arg(long)]
+    editor: Option<PathBuf>,
+  },
 }
 
 fn main() -> ExitCode {
@@ -129,9 +133,19 @@ fn main() -> ExitCode {
         run!(CmdTagRemove::new(args.file, key))
       }
       TagCommand::List { json } => {
-        run!(CmdTagList::new(args.file).use_json_encoding(json))
+        run!(CmdTagList::new(args.file).set_json_output(json))
       }
-      TagCommand::Edit => todo!(),
+      TagCommand::Edit { editor } => {
+        let cmd = CmdTagEdit::new(args.file);
+
+        let cmd = if let Some(editor) = editor {
+          cmd.set_editor(editor)
+        } else {
+          cmd
+        };
+
+        run!(cmd)
+      }
     },
   }
 }

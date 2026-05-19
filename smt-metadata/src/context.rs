@@ -7,23 +7,26 @@ use smt_ffmpeg::{
     context::{AvInputContext, AvOutputContext},
     stream::copy_stream_properties,
   },
+  util::dictionary::AvDictionaryRef,
 };
 use std::{
-  borrow::Cow,
   ffi::OsString,
   fs, io,
   path::{Path, PathBuf},
 };
 
-pub struct MetadataEditContext {
+pub struct MetadataEditContext<P> {
   in_context: AvInputContext,
   out_context: AvOutputContext,
-  in_path: PathBuf,
+  in_path: P,
   out_tmp_path: PathBuf,
 }
 
-impl MetadataEditContext {
-  pub fn open(input: PathBuf) -> Result<Self, MetadataError> {
+impl<P> MetadataEditContext<P>
+where
+  P: AsRef<Path>,
+{
+  pub fn open(input: P) -> Result<Self, MetadataError> {
     let out_tmp_path = get_tmp_path(&input)?;
     let in_context = AvInputContext::open_path(&input)?;
     let mut out_context = AvOutputContext::open_path(&out_tmp_path)?;
@@ -41,6 +44,17 @@ impl MetadataEditContext {
     })
   }
 
+  #[inline]
+  pub fn file_path(&self) -> &Path {
+    self.in_path.as_ref()
+  }
+
+  #[inline]
+  pub fn metadata(&self) -> AvDictionaryRef<'_> {
+    self.in_context.metadata()
+  }
+
+  #[inline]
   pub fn metadata_mut(&mut self) -> MetadataContainer<'_> {
     MetadataContainer::from_output_context(&mut self.out_context)
   }
@@ -98,7 +112,7 @@ impl MetadataEditContext {
   }
 
   pub fn discard(self) -> Result<(), MetadataError> {
-    fs::remove_file(self.out_tmp_path)?;
+    _ = fs::remove_file(self.out_tmp_path);
     Ok(())
   }
 }

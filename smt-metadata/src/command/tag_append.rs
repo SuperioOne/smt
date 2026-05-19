@@ -1,28 +1,31 @@
 use crate::{context::MetadataEditContext, error::MetadataError};
 use cue_lib::metadata::vorbis::VorbisTag;
 use smt_common::{Command, metadata::find_tag_from_str};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-pub struct CmdTagAppend {
-  path: PathBuf,
+pub struct CmdTagAppend<P>
+where
+  P: AsRef<Path>,
+{
+  path: P,
   key: VorbisTag,
   values: Vec<Box<str>>,
 }
 
-impl CmdTagAppend {
-  pub fn new<P>(path: P, key: VorbisTag, values: Vec<Box<str>>) -> Self
-  where
-    P: AsRef<Path>,
-  {
-    Self {
-      path: path.as_ref().to_path_buf(),
-      key,
-      values,
-    }
+impl<P> CmdTagAppend<P>
+where
+  P: AsRef<Path>,
+{
+  #[inline]
+  pub const fn new(path: P, key: VorbisTag, values: Vec<Box<str>>) -> Self {
+    Self { path, key, values }
   }
 }
 
-impl Command for CmdTagAppend {
+impl<P> Command for CmdTagAppend<P>
+where
+  P: AsRef<Path>,
+{
   type Error = MetadataError;
 
   fn run(mut self) -> Result<(), Self::Error> {

@@ -3,29 +3,58 @@ use smt_common::{
   output_error::{ErrorFormat, ErrorFormatter},
 };
 use smt_ffmpeg::error::AvError;
-use std::io::Write as _;
+use std::path::PathBuf;
 
 pub enum MetadataError {
   IOError(std::io::Error),
   AvError(AvError),
-  NoAudioStream,
+  EditError { kind: EditErrorKind },
+}
+
+pub enum EditErrorKind {
+  EditorNotAvailable(PathBuf),
+  InvalidEditMessage,
+  InvalidTagName(Box<str>),
+  EditDiscarded,
 }
 
 impl ErrorFormat for MetadataError {
   fn fmt(
     &self,
-    mut f: ErrorFormatter<'_>,
+    f: ErrorFormatter<'_>,
     input_buffer: &str,
-    verbose_level: VerboseLevel,
+    verbose: VerboseLevel,
   ) -> std::io::Result<()> {
-    if verbose_level == VerboseLevel::Quiet {
+    if verbose == VerboseLevel::Quiet {
       Ok(())
     } else {
       match self {
-        Self::IOError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose_level),
-        Self::AvError(error) => write!(f, "{}", error),
-        Self::NoAudioStream => write!(f, "media file has no audio stream"),
+        Self::IOError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose),
+        Self::AvError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose),
+        Self::EditError { kind } => ErrorFormat::fmt(kind, f, input_buffer, verbose),
       }
+    }
+  }
+}
+
+impl ErrorFormat for EditErrorKind {
+  fn fmt(&self, mut f: ErrorFormatter<'_>, _: &str, verbose: VerboseLevel) -> std::io::Result<()> {
+    match verbose {
+      VerboseLevel::Quiet => Ok(()),
+      _ => match self {
+        Self::InvalidEditMessage => {
+          f.writeln_error(format_args!("edit message format is not valid"))
+        }
+        Self::InvalidTagName(tag) => {
+          f.writeln_error(format_args!("invalid tag name '{tag}' in edit message "))
+        }
+        Self::EditDiscarded => f.writeln_warn(format_args!("edit message discarded")),
+        Self::EditorNotAvailable(editor) => f.writeln_warn(
+          format_args!(
+          "text editor '{}' not found on the system, try setting different text editor via 'EDITOR' env variable or '--editor' argument",
+          editor.display()
+        )),
+      },
     }
   }
 }
@@ -41,5 +70,12 @@ impl From<std::io::Error> for MetadataError {
   #[inline]
   fn from(value: std::io::Error) -> Self {
     Self::IOError(value)
+  }
+}
+
+impl From<EditErrorKind> for MetadataError {
+  #[inline]
+  fn from(value: EditErrorKind) -> Self {
+    Self::EditError { kind: value }
   }
 }
