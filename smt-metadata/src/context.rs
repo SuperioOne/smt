@@ -60,7 +60,6 @@ impl MetadataEditContext {
     let mut out_metadata = self.out_context.metadata_mut();
 
     for (key, value) in src_metadata.iter() {
-      println!("KV {}:{}", key, value);
       if predicate(key, value.as_ref()) {
         out_metadata.push(key, value)?;
       }

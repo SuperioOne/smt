@@ -295,11 +295,13 @@ impl<'a> Iterator for ValueIter<'a> {
           break 'SEARCH;
         }
         Some('\\') => {
-          _ = chars.next();
-          self.cursor += 2;
-        }
-        Some(_) => {
           self.cursor += 1;
+          if let Some(ch) = chars.next() {
+            self.cursor += ch.len_utf8();
+          }
+        }
+        Some(ch) => {
+          self.cursor += ch.len_utf8();
         }
         None => {
           self.cursor += 1;
