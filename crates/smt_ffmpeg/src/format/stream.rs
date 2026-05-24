@@ -2,7 +2,7 @@ use smt_ffmpeg_sys::{
   AVFormatContext, AVMediaType_AVMEDIA_TYPE_ATTACHMENT, AVMediaType_AVMEDIA_TYPE_AUDIO,
   AVMediaType_AVMEDIA_TYPE_DATA, AVMediaType_AVMEDIA_TYPE_NB, AVMediaType_AVMEDIA_TYPE_SUBTITLE,
   AVMediaType_AVMEDIA_TYPE_UNKNOWN, AVMediaType_AVMEDIA_TYPE_VIDEO, AVStream, av_dict_copy,
-  av_packet_ref, avcodec_parameters_copy,
+  avcodec_parameters_copy,
 };
 use std::marker::PhantomData;
 
@@ -44,15 +44,11 @@ pub fn copy_stream_properties(src: &AVStream, dst: &mut AVStream) -> Result<(), 
     unsafe_av_result!(av_dict_copy(&mut dst.metadata, src.metadata, 0))?;
   }
 
-  unsafe_av_result!(av_packet_ref(&mut dst.attached_pic, &src.attached_pic))?;
-
   if !src.codecpar.is_null() {
     unsafe_av_result!(avcodec_parameters_copy(dst.codecpar, src.codecpar))?;
   }
 
-  unsafe {
-    (*dst.codecpar).codec_tag = 0;
-  }
+  unsafe { *dst.codecpar }.codec_tag = 0;
 
   Ok(())
 }

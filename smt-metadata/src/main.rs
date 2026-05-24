@@ -1,3 +1,4 @@
+use self::command::cover_remove::CmdCoverRemove;
 use self::command::{
   tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_edit::CmdTagEdit, tag_list::CmdTagList,
   tag_remove::CmdTagRemove, tag_set::CmdTagSet,
@@ -49,8 +50,6 @@ enum CoverImageCommand {
   },
   /// Remove cover image
   Remove,
-  /// Show cover image info
-  Info,
   /// Extract cover image binary data
   Export {
     /// Target output file path
@@ -115,8 +114,9 @@ fn main() -> ExitCode {
   match args.command {
     MetadataCliCommand::Cover { cmd } => match cmd {
       CoverImageCommand::Set { path } => todo!(),
-      CoverImageCommand::Remove => todo!(),
-      CoverImageCommand::Info => todo!(),
+      CoverImageCommand::Remove => {
+        run!(CmdCoverRemove::new(args.file))
+      }
       CoverImageCommand::Export { output } => todo!(),
     },
     MetadataCliCommand::Tag { cmd } => match cmd {

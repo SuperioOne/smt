@@ -218,10 +218,6 @@ impl<'a> AvDictionaryMut<'a> {
       (AV_DICT_DEDUP | AV_DICT_MULTIKEY) as i32
     ))
   }
-
-  pub fn try_copy_from(&mut self, dictionary: &'a AvDictionaryRef<'_>) -> Result<(), AvError> {
-    unsafe_av_result!(av_dict_copy(self.inner, *dictionary.inner, 0))
-  }
 }
 
 pub type Iter<'a> = Flatten<EntryIter<'a>>;

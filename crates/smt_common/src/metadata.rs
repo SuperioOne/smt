@@ -75,7 +75,7 @@ impl<'a> MetadataContainer<'a> {
     }
   }
 
-  pub fn from_output_context(context: &'a mut AvOutputContext) -> Self {
+  pub fn from_context(context: &'a mut AvOutputContext) -> Self {
     let tagger = find_tagger(&context).unwrap_or(AVLIB_TAGGER);
 
     Self {

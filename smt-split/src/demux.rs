@@ -15,24 +15,16 @@ use smt_ffmpeg::{
   error::{AvError, AvLibError},
   ffmpeg::{
     AV_CODEC_FLAG_GLOBAL_HEADER, AVCodecID_AV_CODEC_ID_FLAC, AVCodecID_AV_CODEC_ID_MP3,
-    AVCodecID_AV_CODEC_ID_MP3ADU, AVCodecID_AV_CODEC_ID_MP3ON4, AVFMT_GLOBALHEADER, AVStream,
+    AVCodecID_AV_CODEC_ID_MP3ADU, AVCodecID_AV_CODEC_ID_MP3ON4, AVFMT_GLOBALHEADER,
   },
   format::{
-    context::{AvContext, AvInputContext, AvOutputContext},
+    context::{AvInputContext, AvOutputContext},
     stream::{StreamType, copy_stream_properties},
   },
-  util::{audio_fifo::AudioFifo, dictionary::AvDictionaryRef, timestamp::AvTimestamp},
+  util::{audio_fifo::AudioFifo, timestamp::AvTimestamp},
 };
-use std::{ffi::CStr, io::ErrorKind, path::Path};
+use std::{io::ErrorKind, path::Path};
 
-macro_rules! static_cstr {
-  ($value:literal) => {
-    unsafe { &CStr::from_bytes_with_nul_unchecked(concat!($value, "\0").as_bytes()) }
-  };
-}
-
-const COVER_IMAGE_KEY: &'static CStr = static_cstr!("comment");
-const COVER_IMAGE_VALUE: &'static CStr = static_cstr!("Cover (front)");
 const EXT_FLAC: &'static str = "flac";
 const EXT_MP3: &'static str = "mp3";
 const UNTITLED_TRACK: CueStr<'static> = CueStr::Text("untitled");
@@ -74,7 +66,7 @@ impl SplitDemuxer {
       std::fs::create_dir_all(&output_dir)?;
     }
 
-    let input = AvInputContext::open_path(input_path.as_ref())?;
+    let mut input = AvInputContext::open_path(input_path.as_ref())?;
     let audio_stream = input
       .find_best_stream(StreamType::Audio)
       .ok_or(SplitError::NothingToSplit)
@@ -85,7 +77,6 @@ impl SplitDemuxer {
           Ok(v)
         }
       })?;
-
     let audio_codec = unsafe { &*audio_stream.codecpar };
     let file_extension = match audio_codec.codec_id {
       AVCodecID_AV_CODEC_ID_MP3 | AVCodecID_AV_CODEC_ID_MP3ADU | AVCodecID_AV_CODEC_ID_MP3ON4 => {
@@ -107,7 +98,7 @@ impl SplitDemuxer {
     decoder.time_base.num = 1;
     decoder.open()?;
 
-    let input_cover_stream = find_cover_image_stream(&input);
+    let input_cover_stream = input.find_cover_image_stream();
     let mut outputs = Vec::with_capacity(cuesheet.tracks.len());
 
     for track_info in cuesheet.tracks.iter() {
@@ -142,7 +133,7 @@ impl SplitDemuxer {
         copy_stream_properties(cover, output_cover_stream)?;
       }
 
-      let mut output_metadata = MetadataContainer::from_output_context(&mut context);
+      let mut output_metadata = MetadataContainer::from_context(&mut context);
       let input_metadata = input.metadata();
 
       output_metadata.push_from_av_dict(input_metadata.iter());
@@ -160,13 +151,15 @@ impl SplitDemuxer {
 
     let mut pkt = AvPacket::try_new()?;
     let mut cover_image_packets = Vec::new();
+    let audio_stream_idx = audio_stream.index;
+    let cover_stream_idx = input_cover_stream.map(|v| v.index);
 
     'DECODER: loop {
       pkt.reset();
 
       match input.read_frame(&mut pkt) {
         Ok(()) => {
-          if pkt.stream_index == audio_stream.index {
+          if pkt.stream_index == audio_stream_idx {
             let frame_ts = AvTimestamp::new(pkt.pts, decoder.pkt_timebase);
 
             for output in outputs.iter_mut() {
@@ -186,8 +179,8 @@ impl SplitDemuxer {
                 }
               }
             }
-          } else if let Some(cover_stream) = input_cover_stream
-            && pkt.stream_index == cover_stream.index
+          } else if let Some(idx) = cover_stream_idx
+            && pkt.stream_index == idx
           {
             cover_image_packets.push(pkt.clone());
           }
@@ -209,7 +202,13 @@ impl SplitDemuxer {
 
   pub fn split(self) -> Result<(), SplitError> {
     for mut output in self.outputs.into_iter() {
-      let cover_stream_idx = find_cover_image_stream(&output.context).map(|v| v.index);
+      let cover_stream_idx = output.context.find_cover_image_stream().map(|v| v.index);
+      let audio_stream_idx = output
+        .context
+        .find_best_stream(StreamType::Audio)
+        .map(|v| v.index)
+        .ok_or(SplitError::UnknownAudioContainer)?;
+
       let mut pts: i64 = 0;
       let mut writer = output.context.start_writer()?;
 
@@ -253,6 +252,7 @@ impl SplitDemuxer {
         audio_packet.reset();
         match output.encoder.receive_packet(&mut audio_packet) {
           Ok(()) => {
+            audio_packet.stream_index = audio_stream_idx;
             writer.write_frame(&mut audio_packet)?;
           }
           Err(AvError::AvLibError(AvLibError::Eof)) => break,
@@ -285,18 +285,4 @@ impl SplitDemuxer {
 
     Ok(())
   }
-}
-
-fn find_cover_image_stream(input: &AvContext) -> Option<&AVStream> {
-  if let Some(stream) = input.find_best_stream(StreamType::Video) {
-    let metadata = AvDictionaryRef::from_ptr_ref(&stream.metadata);
-
-    if let Some(value) = metadata.get(COVER_IMAGE_KEY) {
-      if value == COVER_IMAGE_VALUE {
-        return Some(stream);
-      }
-    }
-  }
-
-  None
 }

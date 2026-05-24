@@ -57,6 +57,7 @@ fn main() {
   let bindgen = bindgen::Builder::default()
     .header("wrapper.h")
     .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
+    .impl_debug(true)
     .blocklist_item("FP_INFINITE")
     .blocklist_item("FP_NAN")
     .blocklist_item("FP_ZERO")

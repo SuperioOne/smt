@@ -9,6 +9,8 @@ pub enum MetadataError {
   IOError(std::io::Error),
   AvError(AvError),
   EditError { kind: EditErrorKind },
+  NoAudioStream,
+  NoImageStream,
 }
 
 pub enum EditErrorKind {
@@ -21,7 +23,7 @@ pub enum EditErrorKind {
 impl ErrorFormat for MetadataError {
   fn fmt(
     &self,
-    f: ErrorFormatter<'_>,
+    mut f: ErrorFormatter<'_>,
     input_buffer: &str,
     verbose: VerboseLevel,
   ) -> std::io::Result<()> {
@@ -29,6 +31,8 @@ impl ErrorFormat for MetadataError {
       Ok(())
     } else {
       match self {
+        Self::NoImageStream => f.writeln_error(format_args!("no image stream found in the file")),
+        Self::NoAudioStream => f.writeln_error(format_args!("no audio stream found in the file")),
         Self::IOError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose),
         Self::AvError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose),
         Self::EditError { kind } => ErrorFormat::fmt(kind, f, input_buffer, verbose),

@@ -8,10 +8,11 @@ use crate::{
   },
 };
 use smt_ffmpeg_sys::{
-  AVFormatContext, AVSEEK_FLAG_BACKWARD, AVStream, av_find_best_stream, av_seek_frame,
-  avformat_new_stream,
+  AV_DISPOSITION_ATTACHED_PIC, AVFormatContext, AVSEEK_FLAG_BACKWARD, AVStream,
+  av_find_best_stream, av_seek_frame, avformat_new_stream,
 };
 use std::{
+  ffi::CStr,
   ops::{Deref, DerefMut},
   ptr::{null, null_mut},
   time::Duration,
@@ -22,6 +23,15 @@ mod output;
 
 pub use input::*;
 pub use output::*;
+
+macro_rules! static_cstr {
+  ($value:literal) => {
+    unsafe { &CStr::from_bytes_with_nul_unchecked(concat!($value, "\0").as_bytes()) }
+  };
+}
+
+pub const COVER_IMAGE_KEY: &'static CStr = static_cstr!("comment");
+pub const COVER_IMAGE_VALUE: &'static CStr = static_cstr!("Cover (front)");
 
 pub struct AvContext {
   inner: *mut AVFormatContext,
@@ -94,6 +104,16 @@ impl AvContext {
     }
   }
 
+  pub fn find_cover_image_stream(&self) -> Option<&AVStream> {
+    for stream in self.stream_iter() {
+      if (stream.disposition as u32 & AV_DISPOSITION_ATTACHED_PIC) == AV_DISPOSITION_ATTACHED_PIC {
+        return Some(stream);
+      }
+    }
+
+    None
+  }
+
   pub fn create_stream(&mut self) -> Result<&mut AVStream, AvError> {
     let stream = unsafe { avformat_new_stream(self.inner, null()) };
 
@@ -104,19 +124,23 @@ impl AvContext {
     }
   }
 
+  #[inline]
   pub fn stream_iter(&self) -> StreamIter<'_> {
-    StreamIter::from_context(&self)
+    StreamIter::from_context(self)
   }
 
+  #[inline]
   pub fn stream_mut_iter(&mut self) -> StreamMutIter<'_> {
     StreamMutIter::from_context(self)
   }
 
+  #[inline]
   pub const fn metadata(&self) -> AvDictionaryRef<'_> {
     AvDictionaryRef::from_ptr_ref(&unsafe { &mut *self.inner }.metadata)
   }
 
-  pub fn metadata_mut(&mut self) -> AvDictionaryMut<'_> {
+  #[inline]
+  pub const fn metadata_mut(&mut self) -> AvDictionaryMut<'_> {
     AvDictionaryMut::from_ptr_ref(&mut unsafe { &mut *self.inner }.metadata)
   }
 

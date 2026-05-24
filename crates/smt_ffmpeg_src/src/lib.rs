@@ -112,6 +112,10 @@ impl AVLibBuilder {
     configure
       .current_dir(&src_dir)
       .arg("--enable-gpl")
+      .arg("--enable-version3")
+      // TODO: MP3 and some PNG data requires external libraries
+      // .arg("--enable-libmp3lame")
+      // .arg("--enable-libzimg")
       .arg(format!("--prefix={}", path.display()))
       .arg("--disable-programs")
       .arg("--disable-doc")

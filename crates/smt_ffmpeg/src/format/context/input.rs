@@ -46,7 +46,7 @@ impl AvInputContext {
     }
   }
 
-  pub fn read_frame(&self, pkt: &mut AvPacket) -> Result<(), AvError> {
+  pub fn read_frame(&mut self, pkt: &mut AvPacket) -> Result<(), AvError> {
     unsafe_av_result!(av_read_frame(self.inner, pkt.deref_mut()))
   }
 
