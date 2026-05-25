@@ -3,11 +3,13 @@ use smt_common::metadata::MetadataContainer;
 use smt_ffmpeg::{
   codec::packet::AvPacket,
   error::{AvError, AvLibError},
-  ffmpeg::{AV_DISPOSITION_ATTACHED_PIC, AVStream},
+  ffmpeg::{
+    AV_DISPOSITION_ATTACHED_PIC, AVCodecID_AV_CODEC_ID_JPEG2000, AVCodecID_AV_CODEC_ID_JPEGLS,
+    AVCodecID_AV_CODEC_ID_JPEGXL, AVCodecID_AV_CODEC_ID_LJPEG, AVCodecID_AV_CODEC_ID_MJPEG,
+    AVCodecID_AV_CODEC_ID_MJPEGB, AVCodecID_AV_CODEC_ID_PNG, AVCodecID_AV_CODEC_ID_SMVJPEG,
+  },
   format::{
-    context::{
-      AvInputContext, AvOutputContext, AvOutputWriter, COVER_IMAGE_KEY, COVER_IMAGE_VALUE,
-    },
+    context::{AvInputContext, AvOutputContext, AvOutputWriter},
     stream::{StreamType, copy_stream_properties},
   },
   util::dictionary::{AvDictionaryMut, AvDictionaryRef},
@@ -30,6 +32,12 @@ pub enum CoverSource {
   UseInputCover,
   External(AvInputContext),
   NoCover,
+}
+
+#[derive(Copy, Clone)]
+struct StreamIndexMap {
+  src: i32,
+  dst: i32,
 }
 
 impl<P> MetadataEditContext<P>
@@ -138,55 +146,69 @@ fn copy_packets(
   mut dst: AvOutputContext,
   cover_src: CoverSource,
 ) -> Result<(), MetadataError> {
-  let src_audio = src
-    .find_best_stream(StreamType::Audio)
-    .ok_or(MetadataError::NoAudioStream)?;
+  let mut mappings = Vec::with_capacity(src.nb_streams as usize);
+  let skip_cover = match &cover_src {
+    CoverSource::UseInputCover => false,
+    _ => true,
+  };
 
-  let mut dst_audio = dst.create_stream()?;
-  copy_stream_properties(src_audio, &mut dst_audio)?;
+  for stream in src.stream_iter() {
+    if (stream.disposition as u32 & AV_DISPOSITION_ATTACHED_PIC) == AV_DISPOSITION_ATTACHED_PIC
+      && skip_cover
+    {
+      continue;
+    } else {
+      let mut dst_stream = dst.create_stream()?;
+      copy_stream_properties(stream, &mut dst_stream)?;
 
-  let writer = match cover_src {
-    CoverSource::UseInputCover => {
-      let mut mappings = Vec::with_capacity(2);
-      mappings.push((src_audio.index, dst_audio.index));
+      mappings.push(StreamIndexMap {
+        src: stream.index,
+        dst: dst_stream.index,
+      });
+    }
+  }
 
-      if let Some(stream) = src.find_cover_image_stream() {
-        let idx = create_cover_stream(stream, &mut dst)?;
-        mappings.push((stream.index, idx));
-      }
+  match cover_src {
+    CoverSource::External(mut av_context) => {
+      let img_stream = av_context
+        .find_best_stream(StreamType::Video)
+        .ok_or(MetadataError::UnsupportedImageFormat)?;
+
+      #[allow(nonstandard_style)]
+      match unsafe { *img_stream.codecpar }.codec_id {
+        AVCodecID_AV_CODEC_ID_PNG
+        | AVCodecID_AV_CODEC_ID_JPEGXL
+        | AVCodecID_AV_CODEC_ID_JPEG2000
+        | AVCodecID_AV_CODEC_ID_JPEGLS
+        | AVCodecID_AV_CODEC_ID_LJPEG
+        | AVCodecID_AV_CODEC_ID_MJPEGB
+        | AVCodecID_AV_CODEC_ID_SMVJPEG
+        | AVCodecID_AV_CODEC_ID_MJPEG => Ok(()),
+        _ => Err(MetadataError::UnsupportedImageFormat),
+      }?;
+
+      let cover_src_idx = img_stream.index;
+      let cover_dst_idx = {
+        let mut dst_cover = dst.create_stream()?;
+        copy_stream_properties(img_stream, &mut dst_cover)?;
+        dst_cover.disposition = AV_DISPOSITION_ATTACHED_PIC as i32;
+
+        let mut metadata = AvDictionaryMut::from_ptr_ref(&mut dst_cover.metadata);
+        metadata.push("comment", "Cover (front)")?;
+
+        dst_cover.index
+      };
 
       let mut writer = dst.start_writer()?;
       writer.write_header()?;
       write_packets_by(&mut src, &mut writer, |pkt| {
-        for (src, dst) in mappings.iter() {
+        for StreamIndexMap { src, dst } in mappings.iter() {
           if pkt.stream_index == *src {
             return Some(*dst);
           }
         }
 
         None
-      })?;
-
-      writer
-    }
-    CoverSource::External(mut av_context) => {
-      let img_stream = av_context
-        .find_best_stream(StreamType::Video)
-        .ok_or(MetadataError::NoImageStream)?;
-
-      let audio_src_idx = src_audio.index;
-      let audio_dst_idx = dst_audio.index;
-      let cover_dst_idx = create_cover_stream(&img_stream, &mut dst)?;
-      let cover_src_idx = img_stream.index;
-
-      let mut writer = dst.start_writer()?;
-      writer.write_header()?;
-      write_packets_by(&mut src, &mut writer, |pkt| {
-        if pkt.stream_index == audio_src_idx {
-          Some(audio_dst_idx)
-        } else {
-          None
-        }
       })?;
 
       write_packets_by(&mut av_context, &mut writer, |pkt| {
@@ -197,39 +219,26 @@ fn copy_packets(
         }
       })?;
 
-      writer
+      writer.finish()?;
+      Ok(())
     }
-    CoverSource::NoCover => {
-      let audio_dst_idx = dst_audio.index;
-      let audio_src_idx = src_audio.index;
-
+    _ => {
       let mut writer = dst.start_writer()?;
       writer.write_header()?;
       write_packets_by(&mut src, &mut writer, |pkt| {
-        if pkt.stream_index == audio_src_idx {
-          Some(audio_dst_idx)
-        } else {
-          None
+        for StreamIndexMap { src, dst } in mappings.iter() {
+          if pkt.stream_index == *src {
+            return Some(*dst);
+          }
         }
+
+        None
       })?;
 
-      writer
+      writer.finish()?;
+      Ok(())
     }
-  };
-
-  writer.finish()?;
-  Ok(())
-}
-
-fn create_cover_stream(stream: &AVStream, dst: &mut AvOutputContext) -> Result<i32, AvError> {
-  let mut dst_cover = dst.create_stream()?;
-  copy_stream_properties(stream, &mut dst_cover)?;
-  dst_cover.disposition = AV_DISPOSITION_ATTACHED_PIC as i32;
-
-  // let mut metadata = AvDictionaryMut::from_ptr_ref(&mut dst_cover.metadata);
-  // unsafe { metadata.push_cstr(COVER_IMAGE_KEY, COVER_IMAGE_VALUE) }?;
-
-  Ok(dst_cover.index)
+  }
 }
 
 fn write_packets_by<F>(

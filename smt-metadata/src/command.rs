@@ -5,4 +5,6 @@ pub mod tag_list;
 pub mod tag_remove;
 pub mod tag_set;
 
+pub mod cover_export;
 pub mod cover_remove;
+pub mod cover_set;

@@ -9,8 +9,8 @@ pub enum MetadataError {
   IOError(std::io::Error),
   AvError(AvError),
   EditError { kind: EditErrorKind },
-  NoAudioStream,
-  NoImageStream,
+  UnsupportedImageFormat,
+  NoCoverImage,
 }
 
 pub enum EditErrorKind {
@@ -31,8 +31,8 @@ impl ErrorFormat for MetadataError {
       Ok(())
     } else {
       match self {
-        Self::NoImageStream => f.writeln_error(format_args!("no image stream found in the file")),
-        Self::NoAudioStream => f.writeln_error(format_args!("no audio stream found in the file")),
+        Self::NoCoverImage => f.writeln_warn(format_args!("no cover image found")),
+        Self::UnsupportedImageFormat => f.writeln_error(format_args!("unsupported image format")),
         Self::IOError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose),
         Self::AvError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose),
         Self::EditError { kind } => ErrorFormat::fmt(kind, f, input_buffer, verbose),
@@ -47,7 +47,7 @@ impl ErrorFormat for EditErrorKind {
       VerboseLevel::Quiet => Ok(()),
       _ => match self {
         Self::InvalidEditMessage => {
-          f.writeln_error(format_args!("edit message format is not valid"))
+          f.writeln_error(format_args!("invalid edit message format"))
         }
         Self::InvalidTagName(tag) => {
           f.writeln_error(format_args!("invalid tag name '{tag}' in edit message "))
@@ -55,7 +55,7 @@ impl ErrorFormat for EditErrorKind {
         Self::EditDiscarded => f.writeln_warn(format_args!("edit message discarded")),
         Self::EditorNotAvailable(editor) => f.writeln_warn(
           format_args!(
-          "text editor '{}' not found on the system, try setting different text editor via 'EDITOR' env variable or '--editor' argument",
+          "Text editor '{}' not found. Set the 'EDITOR' environment variable or use the '--editor' argument to specify an alternative",
           editor.display()
         )),
       },

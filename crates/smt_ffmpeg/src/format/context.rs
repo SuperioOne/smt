@@ -8,11 +8,10 @@ use crate::{
   },
 };
 use smt_ffmpeg_sys::{
-  AV_DISPOSITION_ATTACHED_PIC, AVFormatContext, AVSEEK_FLAG_BACKWARD, AVStream,
-  av_find_best_stream, av_seek_frame, avformat_new_stream,
+  AVFormatContext, AVSEEK_FLAG_BACKWARD, AVStream, av_find_best_stream, av_seek_frame,
+  avformat_new_stream,
 };
 use std::{
-  ffi::CStr,
   ops::{Deref, DerefMut},
   ptr::{null, null_mut},
   time::Duration,
@@ -23,15 +22,6 @@ mod output;
 
 pub use input::*;
 pub use output::*;
-
-macro_rules! static_cstr {
-  ($value:literal) => {
-    unsafe { &CStr::from_bytes_with_nul_unchecked(concat!($value, "\0").as_bytes()) }
-  };
-}
-
-pub const COVER_IMAGE_KEY: &'static CStr = static_cstr!("comment");
-pub const COVER_IMAGE_VALUE: &'static CStr = static_cstr!("Cover (front)");
 
 pub struct AvContext {
   inner: *mut AVFormatContext,
@@ -104,9 +94,9 @@ impl AvContext {
     }
   }
 
-  pub fn find_cover_image_stream(&self) -> Option<&AVStream> {
+  pub fn find_stream_by_disposition(&self, disposition: u32) -> Option<&AVStream> {
     for stream in self.stream_iter() {
-      if (stream.disposition as u32 & AV_DISPOSITION_ATTACHED_PIC) == AV_DISPOSITION_ATTACHED_PIC {
+      if (stream.disposition as u32 & disposition) == disposition {
         return Some(stream);
       }
     }

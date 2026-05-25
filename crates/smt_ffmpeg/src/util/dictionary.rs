@@ -5,7 +5,6 @@ use smt_ffmpeg_sys::{
   AV_DICT_MULTIKEY,
   AVDictionary,
   AVDictionaryEntry,
-  av_dict_copy,
   av_dict_count,
   av_dict_free,
   av_dict_get,

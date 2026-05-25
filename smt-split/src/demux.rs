@@ -14,8 +14,9 @@ use smt_ffmpeg::{
   codec::{context::AvCodecContext, frame::AvFrame, packet::AvPacket},
   error::{AvError, AvLibError},
   ffmpeg::{
-    AV_CODEC_FLAG_GLOBAL_HEADER, AVCodecID_AV_CODEC_ID_FLAC, AVCodecID_AV_CODEC_ID_MP3,
-    AVCodecID_AV_CODEC_ID_MP3ADU, AVCodecID_AV_CODEC_ID_MP3ON4, AVFMT_GLOBALHEADER,
+    AV_CODEC_FLAG_GLOBAL_HEADER, AV_DISPOSITION_ATTACHED_PIC, AVCodecID_AV_CODEC_ID_FLAC,
+    AVCodecID_AV_CODEC_ID_MP3, AVCodecID_AV_CODEC_ID_MP3ADU, AVCodecID_AV_CODEC_ID_MP3ON4,
+    AVFMT_GLOBALHEADER,
   },
   format::{
     context::{AvInputContext, AvOutputContext},
@@ -98,7 +99,7 @@ impl SplitDemuxer {
     decoder.time_base.num = 1;
     decoder.open()?;
 
-    let input_cover_stream = input.find_cover_image_stream();
+    let input_cover_stream = input.find_stream_by_disposition(AV_DISPOSITION_ATTACHED_PIC);
     let mut outputs = Vec::with_capacity(cuesheet.tracks.len());
 
     for track_info in cuesheet.tracks.iter() {
@@ -202,7 +203,10 @@ impl SplitDemuxer {
 
   pub fn split(self) -> Result<(), SplitError> {
     for mut output in self.outputs.into_iter() {
-      let cover_stream_idx = output.context.find_cover_image_stream().map(|v| v.index);
+      let cover_stream_idx = output
+        .context
+        .find_stream_by_disposition(AV_DISPOSITION_ATTACHED_PIC)
+        .map(|v| v.index);
       let audio_stream_idx = output
         .context
         .find_best_stream(StreamType::Audio)

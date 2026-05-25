@@ -83,7 +83,7 @@ where
   }
 
   #[inline]
-  pub fn set_editor<E>(mut self, editor: E) -> Self
+  pub fn set_editor<E>(&mut self, editor: E) -> &mut Self
   where
     E: AsRef<Path>,
   {

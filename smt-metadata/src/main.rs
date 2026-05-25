@@ -1,5 +1,5 @@
-use self::command::cover_remove::CmdCoverRemove;
 use self::command::{
+  cover_export::CmdCoverExport, cover_remove::CmdCoverRemove, cover_set::CmdCoverSet,
   tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_edit::CmdTagEdit, tag_list::CmdTagList,
   tag_remove::CmdTagRemove, tag_set::CmdTagSet,
 };
@@ -52,7 +52,8 @@ enum CoverImageCommand {
   Remove,
   /// Extract cover image binary data
   Export {
-    /// Target output file path
+    #[arg(long, short)]
+    /// Target output path
     output: Option<PathBuf>,
   },
 }
@@ -63,6 +64,7 @@ enum TagCommand {
   Clear,
   /// Set metadata values by overriding existing values.
   Set {
+    #[arg(required = true)]
     key: VorbisTag,
 
     #[arg(required = true)]
@@ -70,6 +72,7 @@ enum TagCommand {
   },
   /// Append values to metadata tag without overriding existing values.
   Append {
+    #[arg(required = true)]
     key: VorbisTag,
 
     #[arg(required = true)]
@@ -113,11 +116,20 @@ fn main() -> ExitCode {
 
   match args.command {
     MetadataCliCommand::Cover { cmd } => match cmd {
-      CoverImageCommand::Set { path } => todo!(),
+      CoverImageCommand::Set { path } => {
+        run!(CmdCoverSet::new(args.file, path))
+      }
       CoverImageCommand::Remove => {
         run!(CmdCoverRemove::new(args.file))
       }
-      CoverImageCommand::Export { output } => todo!(),
+      CoverImageCommand::Export { output } => {
+        let mut cmd = CmdCoverExport::new(args.file);
+
+        if let Some(output_path) = output {
+          cmd.set_output_path(output_path);
+        }
+        run!(cmd)
+      }
     },
     MetadataCliCommand::Tag { cmd } => match cmd {
       TagCommand::Clear => {
@@ -136,13 +148,11 @@ fn main() -> ExitCode {
         run!(CmdTagList::new(args.file).set_json_output(json))
       }
       TagCommand::Edit { editor } => {
-        let cmd = CmdTagEdit::new(args.file);
+        let mut cmd = CmdTagEdit::new(args.file);
 
-        let cmd = if let Some(editor) = editor {
-          cmd.set_editor(editor)
-        } else {
-          cmd
-        };
+        if let Some(editor) = editor {
+          cmd.set_editor(editor);
+        }
 
         run!(cmd)
       }
