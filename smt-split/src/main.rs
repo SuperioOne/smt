@@ -1,32 +1,8 @@
-use self::split::CmdSplit;
-use clap::Parser;
-use smt_common::{VerboseLevel, input_reader::read_input, output_error::OutputError};
+use clap::Parser as _;
+use smt_common::{input_reader::read_input, output_error::OutputError};
 use smt_ffmpeg::avlib_log_level;
-use std::{path::PathBuf, process::ExitCode};
-
-mod demux;
-mod error;
-mod split;
-
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-pub struct Args {
-  /// Cuesheet file path
-  #[arg(short, long)]
-  input: Option<PathBuf>,
-  /// Verbosity level
-  #[arg(short, long)]
-  verbose: Option<VerboseLevel>,
-  /// Root directory for the input file or, FILE path
-  #[arg(short, long)]
-  file_path: Option<PathBuf>,
-  /// Output directory for the split tracks
-  #[arg(short, long)]
-  output_dir: Option<PathBuf>,
-  /// Enables Vorbis metadata comments from remarks
-  #[arg(short, long)]
-  metadata: bool,
-}
+use smt_split::{Args, split::CmdSplit};
+use std::process::ExitCode;
 
 fn main() -> ExitCode {
   let args = Args::parse();

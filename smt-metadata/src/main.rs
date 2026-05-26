@@ -1,98 +1,13 @@
-use self::command::{
+use clap::Parser as _;
+use smt_common::{Command, output_error::OutputError};
+use smt_ffmpeg::avlib_log_level;
+use smt_metadata::command::{
   cover_export::CmdCoverExport, cover_remove::CmdCoverRemove, cover_set::CmdCoverSet,
   tag_append::CmdTagAppend, tag_clear::CmdTagClear, tag_edit::CmdTagEdit, tag_list::CmdTagList,
   tag_remove::CmdTagRemove, tag_set::CmdTagSet,
 };
-use clap::{Parser, Subcommand};
-use cue_lib::metadata::vorbis::VorbisTag;
-use smt_common::{Command, VerboseLevel, output_error::OutputError};
-use smt_ffmpeg::avlib_log_level;
-use std::{path::PathBuf, process::ExitCode};
-
-mod command;
-mod context;
-mod error;
-
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-struct Args {
-  /// Verbosity level
-  #[arg(short, long)]
-  verbose: Option<VerboseLevel>,
-
-  /// Input file
-  file: PathBuf,
-
-  #[command(subcommand)]
-  command: MetadataCliCommand,
-}
-
-#[derive(Subcommand, Debug)]
-enum MetadataCliCommand {
-  /// Cover image commands
-  Cover {
-    #[command(subcommand)]
-    cmd: CoverImageCommand,
-  },
-  /// Metadata tag commands
-  Tag {
-    #[command(subcommand)]
-    cmd: TagCommand,
-  },
-}
-
-#[derive(Subcommand, Debug)]
-enum CoverImageCommand {
-  /// Set new cover image
-  Set {
-    /// Image file path
-    path: PathBuf,
-  },
-  /// Remove cover image
-  Remove,
-  /// Extract cover image binary data
-  Export {
-    #[arg(long, short)]
-    /// Target output path
-    output: Option<PathBuf>,
-  },
-}
-
-#[derive(Subcommand, Debug)]
-enum TagCommand {
-  /// Clear all metadata tags
-  Clear,
-  /// Set metadata values by overriding existing values.
-  Set {
-    #[arg(required = true)]
-    key: VorbisTag,
-
-    #[arg(required = true)]
-    values: Vec<Box<str>>,
-  },
-  /// Append values to metadata tag without overriding existing values.
-  Append {
-    #[arg(required = true)]
-    key: VorbisTag,
-
-    #[arg(required = true)]
-    values: Vec<Box<str>>,
-  },
-  /// Remove metadata tag.
-  Remove { key: VorbisTag },
-  /// List metadata
-  List {
-    /// Show metadata list in json format
-    #[arg(long)]
-    json: bool,
-  },
-  /// Edit metadata in interactive mode
-  Edit {
-    /// Set text editor
-    #[arg(long)]
-    editor: Option<PathBuf>,
-  },
-}
+use smt_metadata::{Args, CoverImageCommand, MetadataCliCommand, TagCommand};
+use std::process::ExitCode;
 
 fn main() -> ExitCode {
   let args = Args::parse();

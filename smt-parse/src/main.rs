@@ -1,41 +1,10 @@
-use self::command::{convert::CmdConvert, test::CmdTest};
-use clap::{Parser, Subcommand};
-use smt_common::{Command, VerboseLevel, input_reader::read_input, output_error::OutputError};
-use std::{path::PathBuf, process::ExitCode};
-
-mod command;
-
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
-pub struct Args {
-  /// Cuesheet file path
-  #[arg(short, long)]
-  pub input: Option<PathBuf>,
-
-  /// Verbosity level
-  #[arg(long)]
-  pub verbose: Option<VerboseLevel>,
-
-  #[command(subcommand)]
-  pub command: Commands,
-}
-
-#[derive(Subcommand, Debug)]
-pub enum Commands {
-  /// Verifies input cuesheet syntax
-  Test,
-  /// Parses cuesheet and serializes data as structured JSON string
-  ConvertJson {
-    #[arg(short, long)]
-    output_file: Option<PathBuf>,
-    /// Enables Vorbis metadata comments from remarks
-    #[arg(short, long)]
-    metadata: bool,
-    /// Formats JSON output
-    #[arg(short, long)]
-    pretty_print: bool,
-  },
-}
+use clap::Parser;
+use smt_common::{Command, input_reader::read_input, output_error::OutputError};
+use smt_parse::{
+  Args, Commands,
+  command::{convert::CmdConvert, test::CmdTest},
+};
+use std::process::ExitCode;
 
 fn main() -> ExitCode {
   let args = Args::parse();

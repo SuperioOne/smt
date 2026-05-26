@@ -1,0 +1,18 @@
+[package]
+name = "shell_completion"
+edition = "2024"
+version.workspace = true
+authors.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+clap = { workspace = true, features = ["derive"] }
+clap_complete.workspace = true
+smt-metadata.workspace = true
+smt-split.workspace = true
+smt-parse.workspace = true

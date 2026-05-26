@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["smt-*", "crates/smt_*"]
+members = ["smt-*", "crates/smt_*", "shell_completion"]
 
 [profile.release]
 lto = true
@@ -20,9 +20,13 @@ license = "GPL-2.0"
 [workspace.dependencies]
 cue_lib = { version = "0.1" }
 clap = { version = "4", features = ["derive"] }
+clap_complete = { version = "4" }
 serde = { version = "1", features = ["serde_derive"] }
 serde_json = { version = "1" }
 smt_ffmpeg = { path = "./crates/smt_ffmpeg" }
 smt_ffmpeg_sys = { path = "./crates/smt_ffmpeg_sys" }
 smt_ffmpeg_src = { path = "./crates/smt_ffmpeg_src" }
 smt_common = { path = "./crates/smt_common" }
+smt-metadata = { path = "./smt-metadata" }
+smt-split = { path = "./smt-split" }
+smt-parse = { path = "./smt-parse" }
