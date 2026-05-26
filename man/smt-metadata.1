@@ -1,0 +1,201 @@
+.TH smt-metadata 1 "2026-05-26" "0.1.0" "SMT User Manual"
+.SH NAME
+.PP
+smt-metadata \- SMT metadata editor
+.SH SYNOPSIS
+.PP
+smt-metadata [\fB\-v\fR|\fB\-\-verbose\fR \fI<VERBOSE>\fR]
+             [\fB\-h\fR|\fB\-\-help\fR]
+             [\fB\-V\fR|\fB\-\-version\fR]
+             \fI<AUDIO_FILE_PATH>\fR
+             \fI<COMMAND>\fR
+             [\fI<SUBOPTIONS>\fR]
+.SH DESCRIPTION
+.PP
+.B smt-metadata
+enables editing of Vorbis and IDv3 metadata, as well as embedded cover images, in audio files.
+
+.SH COMMANDS
+.TS
+tab(@);
+l lx.
+\fBtag clear\fR@T{
+Clears all metadata tags from the audio file.
+T}
+
+\fBtag set <KEY> [<VALUE>]\fR@T{
+Overrides existing metadata tags with new values, avoiding case-sensitive duplicates.
+T}
+
+\fBtag append <KEY> [<VALUE>]\fR@T{
+Appends new metadata tag values to the audio file, avoiding case-sensitive duplicates.
+T}
+
+\fBtag remove <KEY>\fR@T{
+Removes specified metadata tags from the audio file.
+T}
+
+\fBtag list\fR@T{
+Lists existing tags on the audio file.
+T}
+
+\fBtag edit\fR@T{
+Starts an interactive session for bulk editing via a text editor.
+T}
+
+\fBcover export\fR@T{
+Extracts the cover image from the audio file (if available).
+T}
+
+\fBcover set <PATH>\fR@T{
+Sets a cover image for the audio file. Only JPEG and PNG formats are supported. 
+Additionally, a cover image from another audio file can be used as the source.
+T}
+
+\fBcover remove\fR@T{
+Removes the cover image from the audio file (if available).
+T}
+.TE
+
+.SH OPTIONS
+.SS Global options:
+.TP
+.BR \-v ", " \-\-verbose
+Set verbosity level. Allowed values are
+.BR full ", " default ", " quiet
+.TP
+.BR \-h ", " \-\-help
+Print help menu and exit.
+.TP
+.BR \-V ", " \-\-version
+Print version and exit.
+
+.SS \fBtag list\fR options:
+.TP
+.BR \-\-json
+Enable printing metadata as JSON formatted text.
+.TP
+
+.SS \fBtag edit\fR options:
+.TP
+.BR \-\-editor\ <NAME|PATH>
+Overrides the default text editor. If the provided value is not a path,
+the \fIPATH\fR environment variable is used to locate the executable.
+.TP
+
+.SS \fBcover export\fR options:
+.TP
+.BR \-o ", " \-\-output " " <PATH>
+Set output directory or path. By default exports to current directory as \fIcover.(jpg|png)\fR.
+.TP
+
+.SH ENVIRONMENT
+.SS EDITOR
+.TP
+Text editor used by \fBtag edit\fR command. If not set, uses \fBvi\fR(1) as fallback option.
+
+.SH EXAMPLE
+
+.SS
+Metadata operations
+
+.TP
+Append new artists:
+
+.EX
+smt-metadata /path/to/audio.flac tag append ARTIST "Tim Vegas" "Chen-U"
+.EE
+
+.TP
+Set date:
+
+.EX
+smt-metadata /path/to/audio.flac tag set DATE "2012-04-01"
+.EE
+
+.TP
+Remove comment tags:
+
+.EX
+smt-metadata /path/to/audio.flac tag remove COMMENT
+.EE
+
+.TP
+List tags as JSON and use \fBjq\fR(1) for formatting:
+
+.EX
+smt-metadata /path/to/audio.flac tag list --json | jq
+.EE
+
+.TP
+Edit all tags with different text editor:
+
+.EX
+smt-metadata /path/to/audio.flac tag edit --editor nvim
+.EE
+
+.SS 
+Cover image operations
+
+.TP
+Remove cover image:
+
+.EX
+smt-metadata /path/to/audio.flac cover remove
+.EE
+
+.TP
+Set cover image:
+
+.EX
+smt-metadata /path/to/audio.flac cover set /path/to/cover.jpg
+.EE
+
+.TP
+Set cover image from another audio file with embedded cover image:
+
+.EX
+smt-metadata /path/to/audio.flac cover set /path/to/another.flac
+.EE
+
+.TP
+Export cover image to specific directory:
+
+.EX
+smt-metadata /path/to/audio.flac cover export -o /images/
+.EE
+
+.TP
+Export cover image to specific path:
+
+.EX
+smt-metadata /path/to/audio.flac cover export -o /images/my-cover.jpg
+.EE
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful program execution.
+.TP
+.B 1
+Usage or invalid file formats.
+
+.SH BUGS
+
+.B smt-metadata
+is primarily tested against FFmpeg version n8.1.1. Depending on how the tool was
+built, the linked libavformat and libavcodec libraries may missing certain decoders,
+unexpected metadata behavior, or contain other kind of bugs.
+
+.SH REPORTING BUGS
+.TS
+tab(%);
+l lx.
+
+\fBCodeberg\fR%https://codeberg.org/SuperiorOne/smt/issues
+\fBGithub\fR%https://github.com/SuperioOne/smt/issues
+\fBEmail\fR%pm@smdd.dev
+.TE
+
+.SH SEE ALSO
+.BR smt (7),

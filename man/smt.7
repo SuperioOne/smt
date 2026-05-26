@@ -1,0 +1,191 @@
+.TH smt 7 "2026-05-26" "0.1.0" "SMT User Manual"
+.SH NAME
+smt \- Superior's Music Tools User Manual
+.SH DESCRIPTION
+.BR smt
+is a collection of command-line interface tools primarily designed
+for manipulating audio file metadata, parsing cuesheets, and splitting
+audio files based on cuesheet data.
+
+The currently available tools are:
+
+.TS
+allbox tab(@);
+lB lB
+l lx.
+Tool@Description
+\fBsmt-parse\fR(1)@T{
+Basic utility for converting and testing CDRWIN's cuesheet files.
+T}
+\fBsmt-split\fR(1)@T{
+Splits audio files into individual tracks and applies all available 
+metadata to each track by using cuesheet.
+T}
+\fBsmt-metadata\fR(1)@T{
+Editing tool for Vorbis/IDv3 metadata and embedded cover images in audio files.
+T}
+.TE
+
+.SH CUESHEET RULES
+.B smt
+uses \fIcue_lib\fR to parse cuesheet files. \fIcue_lib\fR is also a sub-project of smt.
+
+The cuesheet format largely follows the original \fICDRWIN\ User's\ Guide\fR.
+
+.SS
+DIFFERENCES
+
+From \fIcue_lib\fR documentation:
+
+- The limit for TRACK and INDEX numbers are 255 instead of 99.
+
+- POSTGAP and PREGAP commands can appear in any order within a TRACK.
+
+- ISRC command can appear before, after, in between INDEX commands.
+
+- The FILE command must appear appear before any TRACK command but can appear anywhere else.
+
+- The CATALOG command is not limited to 13-digit UPC/EAN format, any valid cuesheet text is accepted.
+
+- REM with Vorbis comments can be read as additional metadata for both album and tracks.
+
+- FLAC is allowed in the FILE command as a file type.
+
+.SS
+TEXT VALUES IN CUESHEET
+.PP
+If a text value contains any whitespace characters other than line-breaks, it must 
+be surrounded by double quotes (").
+.PP
+The backslash character (\\) serves as an escape character and can be used to escape
+double quotes or the backslash itself. Values containing these characters must also
+be surrounded by double quotes.
+.PP
+All other text values may be left as-is.
+
+.SS EXAMPLE CUESHEET
+
+.EX
+REM COMMENT "Example of \\"escaped\\" text"
+REM DATE 1987
+REM GENRE Pop
+REM GENRE Dance-Pop
+TITLE "Whenever You Need Somebody"
+FILE "rick_astley_whenever_you_need_somebody.flac" WAVE
+TRACK 01 AUDIO
+  REM BPM 69
+  TITLE "Never Gonna Give You Up"
+  INDEX 00 00:00:00
+  INDEX 01 00:03:32
+  PERFORMER "Rick Astley"
+  ISRC GBAYE0100001
+TRACK 02 AUDIO
+  TITLE "Never Gonna Let You Down"
+  PERFORMER "Rick Astley"
+  INDEX 01 03:32:00
+  INDEX 02 04:32:00
+  ISRC GBAYE0100002
+TRACK 03 AUDIO
+  TITLE "Never Gonna Run Around and Desert You"
+  PERFORMER "Rick Astley"
+  INDEX 01 07:04:00
+  ISRC GBAYE0100003
+.EE
+
+.SH REMARK METADATA
+.PP
+The default cuesheet includes only a limited subset of metadata tags. Rather than
+extending the standard with new commands, smt uses remarks (REM) in specific
+formats to add additional metadata. The scope of each metadata item is determined
+by its position: remarks defined within a track apply only to that track, while
+top-level remarks apply to all tracks in the cuesheet.
+.PP
+Any REM command containing a tag name followed by a single text value is interpreted
+as metadata. Remarks that do not follow this format are ignored.
+
+.RS
+REM <TAG> <CUE TEXT>
+.RE
+
+.PP
+To define multi-value tags, use multiple REM commands with the same metadata tag name.
+
+
+.SH SUPPORTED TAG NAMES
+
+.BR ACOUSTID_FINGERPRINT ,
+.BR ACOUSTID_ID ,
+.BR ALBUM ,
+.BR ALBUMARTIST ,
+.BR ALBUMARTISTSORT ,
+.BR ALBUMSORT ,
+.BR ARRANGER ,
+.BR ARTIST ,
+.BR ARTISTS ,
+.BR ARTISTSORT ,
+.BR ASIN ,
+.BR BARCODE ,
+.BR BPM ,
+.BR CATALOGNUMBER ,
+.BR COMMENT ,
+.BR COMPILATION ,
+.BR COMPOSER ,
+.BR COMPOSERSORT ,
+.BR CONDUCTOR ,
+.BR COPYRIGHT ,
+.BR DATE ,
+.BR DIRECTOR ,
+.BR DISCNUMBER ,
+.BR DISCSUBTITLE ,
+.BR DISCTOTAL ,
+.BR DJMIXER ,
+.BR ENCODEDBY ,
+.BR ENCODERSETTINGS ,
+.BR ENGINEER ,
+.BR GENRE ,
+.BR GROUPING ,
+.BR ISRC ,
+.BR KEY ,
+.BR LABEL ,
+.BR LANGUAGE ,
+.BR LICENSE ,
+.BR LYRICIST ,
+.BR LYRICS ,
+.BR MEDIA ,
+.BR MIXER ,
+.BR MOOD ,
+.BR MOVEMENT ,
+.BR MOVEMENTNAME ,
+.BR MOVEMENTTOTAL ,
+.BR ORIGINALDATE ,
+.BR ORIGINALFILENAME ,
+.BR ORIGINALYEAR ,
+.BR PERFORMER ,
+.BR PRODUCER ,
+.BR RATING ,
+.BR RELEASECOUNTRY ,
+.BR RELEASESTATUS ,
+.BR RELEASETYPE ,
+.BR REMIXER ,
+.BR REPLAYGAIN_ALBUM_GAIN ,
+.BR REPLAYGAIN_ALBUM_PEAK ,
+.BR REPLAYGAIN_ALBUM_RANGE ,
+.BR REPLAYGAIN_REFERENCE_LOUDNESS ,
+.BR REPLAYGAIN_TRACK_GAIN ,
+.BR REPLAYGAIN_TRACK_PEAK ,
+.BR REPLAYGAIN_TRACK_RANGE ,
+.BR SCRIPT ,
+.BR SHOWMOVEMENT ,
+.BR SUBTITLE ,
+.BR TITLE ,
+.BR TITLESORT ,
+.BR TRACKNUMBER ,
+.BR TRACKTOTAL ,
+.BR WEBSITE ,
+.BR WORK ,
+.BR WRITER
+
+.SH SEE ALSO
+.BR smt-metadata (1),
+.BR smt-parse (1),
+.BR smt-split (1)

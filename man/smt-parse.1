@@ -1,31 +1,29 @@
-.TH smt-parse 1 "2026-04-25" "0.1.0" "SMT User Manual"
-.SH
-NAME
+.TH smt-parse 1 "2026-05-26" "0.1.0" "SMT User Manual"
+.SH NAME
 .PP
-smt-parse \- SMT CUE sheet parser
-.SH
-SYNOPSIS
+smt-parse \- SMT cuesheet parser
+.SH SYNOPSIS
 .PP
 smt-parse [\fB\-i\fR|\fB\-\-input\fR \fI<PATH>\fR]
-          [\fB\-\-verbose\fR \fI<VERBOSE>\fR]
+          [\fB\-v\fR|\fB\-\-verbose\fR \fI<VERBOSE>\fR]
           [\fB\-h\fR|\fB\-\-help\fR]
           [\fB\-V\fR|\fB\-\-version\fR]
           \fI<COMMAND>\fR
           [\fI<SUBOPTIONS>\fR]
-.SH
-DESCRIPTION
+.SH DESCRIPTION
 .PP
-\fBsmt-parse\fR provides basic utility for converting and testing CDRWIN's CUE sheet files.
+.B smt-parse
+provides basic utility for converting and testing CDRWIN's cuesheet files.
 
 .SH COMMANDS
 .TS
 tab(@);
 l lx.
 \fBtest\fR@T{
-Verifies input CUE sheet format.
+Verifies input cuesheet format.
 T}
 \fBconvert-json\fR@T{
-Converts input CUE sheet into JSON output.
+Converts input cuesheet into JSON output.
 T}
 .TE
 
@@ -33,9 +31,9 @@ T}
 .SS Global options:
 .TP
 .BR \-i ", " \-\-input
-Set CUE sheet input file path. If not set, \fBstdin(3)\fR is used as CUE sheet input.
+Set cuesheet input file path. If not set, \fBstdin(3)\fR is used as cuesheet input.
 .TP
-.BR \-\-verbose
+.BR \-v ", " \-\-verbose
 Set verbosity level. Allowed values are
 .BR full ", " default ", " quiet
 .TP
@@ -51,9 +49,9 @@ Print version and exit.
 Set JSON output file path. If not set, \fBstdout(3)\fR is used as output.
 .TP
 .BR \-m ", " \-\-metadata
-Enable parsing of additional Vorbis comments from CUE sheet remarks.
+Enable parsing of additional Vorbis comments from cuesheet remarks.
 .IP
-For more details about how Vorbis comments are parsed from remarks see \fBsmt-cue\fR(7).
+For more details about how Vorbis comments are parsed from remarks see \fBsmt\fR(7).
 .TP
 .BR \-p ", " \-\-pretty-print
 Format JSON output.
@@ -61,7 +59,7 @@ Format JSON output.
 .SH EXAMPLE
 
 .SS
-Testing CUE sheets
+Testing cuesheets
 
 .TP
 Using an input file:
@@ -85,7 +83,7 @@ smt-parse --verbose full -i example.cue test
 .EE
 
 .SS
-Converting CUE sheets to JSON:
+Converting cuesheets to JSON:
 
 .TP
 Using an input file with Vorbis metadata and pretty print enabled:
@@ -107,20 +105,19 @@ smt-parse -i example.cue convert-json -m | jq '.tracks[].title'
 Successful program execution.
 .TP
 .B 1
-Usage or invalid CUE sheet errors.
+Usage or invalid cuesheet errors.
 
-.SH BUGS
-.TP
-.B Codeberg
-https://codeberg.org/SuperiorOne/smt/issues
-.TP
-.B GitHub
-https://github.com/SuperioOne/smt/issues
-.TP
-.B Email
-pm@smdd.dev
+.SH REPORTING BUGS
+.TS
+tab(%);
+l lx.
+
+\fBCodeberg\fR%https://codeberg.org/SuperiorOne/smt/issues
+\fBGithub\fR%https://github.com/SuperioOne/smt/issues
+\fBEmail\fR%pm@smdd.dev
+.TE
 
 .SH SEE ALSO
 .BR smt-split (1),
-.BR smt-cue (7),
+.BR smt (7),
 .BR jq (1)

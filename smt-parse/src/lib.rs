@@ -14,7 +14,7 @@ pub struct Args {
   pub input: Option<PathBuf>,
 
   /// Verbosity level
-  #[arg(long)]
+  #[arg(short, long)]
   pub verbose: Option<VerboseLevel>,
 
   #[command(subcommand)]

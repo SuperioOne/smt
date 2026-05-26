@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-pub const SOURCE_DIR: &'static str = env!("FFMPEG_SRC_DIR");
+pub const SOURCE_DIR: &str = env!("FFMPEG_SRC_DIR");
 
 #[derive(Debug)]
 pub enum BuildError {
@@ -31,7 +31,7 @@ where
   let dst = dst.as_ref();
 
   if !dst.exists() {
-    std::fs::create_dir(&dst)?;
+    std::fs::create_dir(dst)?;
   }
 
   for entry in dir.flatten() {
