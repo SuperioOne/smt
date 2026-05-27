@@ -51,13 +51,13 @@ fn main() -> ExitCode {
         run!(CmdTagClear::new(args.file))
       }
       TagCommand::Set { key, values } => {
-        run!(CmdTagSet::new(args.file, key, values))
+        run!(CmdTagSet::new(args.file, key.into(), values))
       }
       TagCommand::Append { key, values } => {
-        run!(CmdTagAppend::new(args.file, key, values))
+        run!(CmdTagAppend::new(args.file, key.into(), values))
       }
       TagCommand::Remove { key } => {
-        run!(CmdTagRemove::new(args.file, key))
+        run!(CmdTagRemove::new(args.file, key.into()))
       }
       TagCommand::List { json } => {
         run!(CmdTagList::new(args.file).set_json_output(json))

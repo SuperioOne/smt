@@ -28,7 +28,8 @@ T}
 
 .SH CUESHEET RULES
 .B smt
-uses \fIcue_lib\fR to parse cuesheet files. \fIcue_lib\fR is also a sub-project of smt.
+uses \fIcue_lib\fR to parse cuesheet files. \fIcue_lib\fR is also a sub-project
+of smt.
 
 The cuesheet format largely follows the original \fICDRWIN\ User's\ Guide\fR.
 
@@ -43,23 +44,26 @@ From \fIcue_lib\fR documentation:
 
 - ISRC command can appear before, after, in between INDEX commands.
 
-- The FILE command must appear appear before any TRACK command but can appear anywhere else.
+- The FILE command must appear appear before any TRACK command but can appear
+anywhere else.
 
-- The CATALOG command is not limited to 13-digit UPC/EAN format, any valid cuesheet text is accepted.
+- The CATALOG command is not limited to 13-digit UPC/EAN format, any valid
+cuesheet text is accepted.
 
-- REM with Vorbis comments can be read as additional metadata for both album and tracks.
+- REM with Vorbis comments can be read as additional metadata for both album
+and tracks.
 
 - FLAC is allowed in the FILE command as a file type.
 
 .SS
 TEXT VALUES IN CUESHEET
 .PP
-If a text value contains any whitespace characters other than line-breaks, it must 
-be surrounded by double quotes (").
+If a text value contains any whitespace characters other than line-breaks, it
+must be surrounded by double quotes (").
 .PP
-The backslash character (\\) serves as an escape character and can be used to escape
-double quotes or the backslash itself. Values containing these characters must also
-be surrounded by double quotes.
+The backslash character (\\) serves as an escape character and can be used to 
+escape double quotes or the backslash itself. Values containing these characters
+must also be surrounded by double quotes.
 .PP
 All other text values may be left as-is.
 
@@ -94,21 +98,22 @@ TRACK 03 AUDIO
 
 .SH REMARK METADATA
 .PP
-The default cuesheet includes only a limited subset of metadata tags. Rather than
-extending the standard with new commands, smt uses remarks (REM) in specific
-formats to add additional metadata. The scope of each metadata item is determined
-by its position: remarks defined within a track apply only to that track, while
-top-level remarks apply to all tracks in the cuesheet.
+The default cuesheet includes only a limited subset of metadata tags. Rather
+than extending the standard with new commands, smt uses remarks (REM) in
+specific formats to add additional metadata. The scope of each metadata item is
+determined by its position: remarks defined within a track apply only to that
+track, while top-level remarks apply to all tracks in the cuesheet.
 .PP
-Any REM command containing a tag name followed by a single text value is interpreted
-as metadata. Remarks that do not follow this format are ignored.
+Any REM command containing a tag name followed by a single text value is
+interpreted as metadata. Remarks that do not follow this format are ignored.
 
 .RS
 REM <TAG> <CUE TEXT>
 .RE
 
 .PP
-To define multi-value tags, use multiple REM commands with the same metadata tag name.
+To define multi-value tags, use multiple REM commands with the same metadata
+tag name.
 
 
 .SH SUPPORTED TAG NAMES

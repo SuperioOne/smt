@@ -27,7 +27,8 @@ cuesheets; for format transcoding, use \fBffmpeg\fR(1) instead.
 .SH OPTIONS
 .TP
 .BR \-i ", " \-\-input
-Set cuesheet input file path. If not set, \fBstdin(3)\fR is used as cuesheet input.
+Set cuesheet input file path. If not set, \fBstdin(3)\fR is used as cuesheet
+input.
 .TP
 .BR \-v ", " \-\-verbose
 Set verbosity level. Allowed values are
@@ -36,21 +37,23 @@ Set verbosity level. Allowed values are
 .BR \-f ", " \-\-file-path
 If given path is a file, overrides FILE command with the given path.
 
-If given path is a directory, uses it as a root directory for cuesheet FILE command.
+If given path is a directory, uses it as a root directory for cuesheet FILE
+command.
 
 By default, uses cuesheet's parent directory.
 .TP
 .BR \-o ", " \-\-output-dir
 Set output directory for the splitted tracks.
 
-This option automatically creates parent directories if they do not exists. 
+This option automatically creates parent directories if they do not exists.
 
 By default, uses current directory.
 .TP
 .BR \-m ", " \-\-metadata
 Enable additional Vorbis comments from cuesheet remarks.
 .IP
-For more details about how Vorbis comments are parsed from remarks, see \fBsmt\fR(7).
+For more details about how Vorbis comments are parsed from remarks, see
+\fBsmt\fR(7).
 .TP
 .BR \-h ", " \-\-help
 Print help menu and exit.
@@ -145,9 +148,9 @@ Usage, encoder, decoder, or invalid cuesheet errors.
 .SH BUGS
 
 .B smt-split
-is primarily tested against FFmpeg version n8.1.1. Depending on how the tool was
-built, the linked libavformat and libavcodec libraries may missing certain encoders,
-different behavior, or contain other kind of bugs.
+is primarily tested against FFmpeg version n8.1.1. Depending on how the tool
+was built, the linked libavformat and libavcodec libraries may missing certain
+encoders, different behavior, or contain other kind of bugs.
 
 .SH REPORTING BUGS
 .TS

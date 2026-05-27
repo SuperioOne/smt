@@ -13,7 +13,8 @@ smt-metadata [\fB\-v\fR|\fB\-\-verbose\fR \fI<VERBOSE>\fR]
 .SH DESCRIPTION
 .PP
 .B smt-metadata
-enables editing of Vorbis and IDv3 metadata, as well as embedded cover images, in audio files.
+enables editing of Vorbis and IDv3 metadata, as well as embedded cover images,
+in audio files.
 
 .SH COMMANDS
 .TS
@@ -24,11 +25,13 @@ Clears all metadata tags from the audio file.
 T}
 
 \fBtag set <KEY> [<VALUE>]\fR@T{
-Overrides existing metadata tags with new values, avoiding case-sensitive duplicates.
+Overrides existing metadata tags with new values, avoiding case-sensitive
+duplicates.
 T}
 
 \fBtag append <KEY> [<VALUE>]\fR@T{
-Appends new metadata tag values to the audio file, avoiding case-sensitive duplicates.
+Appends new metadata tag values to the audio file, avoiding case-sensitive
+duplicates.
 T}
 
 \fBtag remove <KEY>\fR@T{
@@ -48,7 +51,7 @@ Extracts the cover image from the audio file (if available).
 T}
 
 \fBcover set <PATH>\fR@T{
-Sets a cover image for the audio file. Only JPEG and PNG formats are supported. 
+Sets a cover image for the audio file. Only JPEG and PNG formats are supported.
 Additionally, a cover image from another audio file can be used as the source.
 T}
 
@@ -86,13 +89,15 @@ the \fIPATH\fR environment variable is used to locate the executable.
 .SS \fBcover export\fR options:
 .TP
 .BR \-o ", " \-\-output " " <PATH>
-Set output directory or path. By default exports to current directory as \fIcover.(jpg|png)\fR.
+Set output directory or path. By default exports to current directory as 
+\fIcover.(jpg|png)\fR.
 .TP
 
 .SH ENVIRONMENT
 .SS EDITOR
 .TP
-Text editor used by \fBtag edit\fR command. If not set, uses \fBvi\fR(1) as fallback option.
+Text editor used by \fBtag edit\fR command. If not set, uses \fBvi\fR(1) as 
+fallback option.
 
 .SH EXAMPLE
 
@@ -183,9 +188,12 @@ Usage or invalid file formats.
 .SH BUGS
 
 .B smt-metadata
-is primarily tested against FFmpeg version n8.1.1. Depending on how the tool was
-built, the linked libavformat and libavcodec libraries may missing certain decoders,
-unexpected metadata behavior, or contain other kind of bugs.
+is primarily tested against FFmpeg version n8.1.1. Depending on how the tool
+was built, the linked libavformat and libavcodec libraries may missing certain
+decoders, unexpected metadata behavior, or contain other kind of bugs.
+
+For MP3 files; FFmpeg can write multi-value metadata tags without an issue, but
+current implementation fails to read all available tags.
 
 .SH REPORTING BUGS
 .TS

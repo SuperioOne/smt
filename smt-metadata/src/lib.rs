@@ -1,6 +1,5 @@
 use clap::{Parser, Subcommand};
-use cue_lib::metadata::vorbis::VorbisTag;
-use smt_common::VerboseLevel;
+use smt_common::{VerboseLevel, metadata::tag_name::TagName};
 use std::path::PathBuf;
 
 pub mod command;
@@ -60,22 +59,25 @@ pub enum TagCommand {
   Clear,
   /// Set metadata values by overriding existing values.
   Set {
-    #[arg(required = true)]
-    key: VorbisTag,
+    #[arg(required = true, value_enum)]
+    key: TagName,
 
     #[arg(required = true)]
     values: Vec<Box<str>>,
   },
   /// Append values to metadata tag without overriding existing values.
   Append {
-    #[arg(required = true)]
-    key: VorbisTag,
+    #[arg(required = true, value_enum)]
+    key: TagName,
 
     #[arg(required = true)]
     values: Vec<Box<str>>,
   },
   /// Remove metadata tag.
-  Remove { key: VorbisTag },
+  Remove {
+    #[arg(required = true, value_enum)]
+    key: TagName,
+  },
   /// List metadata
   List {
     /// Show metadata list in json format

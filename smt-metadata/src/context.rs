@@ -75,7 +75,7 @@ where
 
   #[inline]
   pub fn metadata_mut(&mut self) -> MetadataContainer<'_> {
-    MetadataContainer::from_context(&mut self.out_context)
+    MetadataContainer::new(&mut self.out_context)
   }
 
   pub fn copy_all_metadata(&mut self) -> Result<(), MetadataError> {

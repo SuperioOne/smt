@@ -1,52 +1,13 @@
+use self::tagger::Tagger;
 use cue_lib::{
-  metadata::{Metadata, MetadataTag, avlib::AvLibTag, id3::Id3Tag, vorbis::VorbisTag},
+  metadata::{MetadataTag, avlib::AvLibTag, id3::Id3Tag, vorbis::VorbisTag},
   parse::{Cuesheet, TrackInfo},
 };
-use smt_ffmpeg::{
-  ffmpeg::{
-    AVCodecID_AV_CODEC_ID_FLAC, AVCodecID_AV_CODEC_ID_MP3, AVCodecID_AV_CODEC_ID_MP3ADU,
-    AVCodecID_AV_CODEC_ID_MP3ON4,
-  },
-  format::{
-    context::{AvContext, AvOutputContext},
-    stream::StreamType,
-  },
-  util::dictionary::AvDictionaryMut,
-};
+use smt_ffmpeg::{format::context::AvOutputContext, util::dictionary::AvDictionaryMut};
 use std::{borrow::Borrow, str::FromStr as _};
 
-/// Simple dyn-compatible trait to map generic metadata tags to container specific tag names
-pub trait CodecMetadataTagger: Sync {
-  fn get_name(&self, tag: MetadataTag) -> Option<&str>;
-}
-
-pub struct VorbisTagger;
-pub struct Id3Tagger;
-pub struct AvLibTagger;
-
-pub static VORBIS_TAGGER: &'static dyn CodecMetadataTagger = &VorbisTagger;
-pub static ID3_TAGGER: &'static dyn CodecMetadataTagger = &Id3Tagger;
-pub static AVLIB_TAGGER: &'static dyn CodecMetadataTagger = &AvLibTagger;
-
-#[allow(nonstandard_style)]
-pub fn find_tagger_by_codec_id(codec_id: u32) -> &'static dyn CodecMetadataTagger {
-  match codec_id {
-    AVCodecID_AV_CODEC_ID_MP3 | AVCodecID_AV_CODEC_ID_MP3ADU | AVCodecID_AV_CODEC_ID_MP3ON4 => {
-      ID3_TAGGER
-    }
-    AVCodecID_AV_CODEC_ID_FLAC => VORBIS_TAGGER,
-    _ => AVLIB_TAGGER,
-  }
-}
-
-#[allow(nonstandard_style)]
-pub fn find_tagger(context: &AvContext) -> Option<&'static dyn CodecMetadataTagger> {
-  context
-    .find_best_stream(StreamType::Audio)
-    .map(|v| unsafe { v.codecpar.as_ref() })
-    .flatten()
-    .map(|v| find_tagger_by_codec_id(v.codec_id))
-}
+pub mod tag_name;
+mod tagger;
 
 pub fn find_tag_from_str(value: &str) -> Option<MetadataTag> {
   if let Ok(av_tag) = AvLibTag::from_str(value) {
@@ -63,24 +24,15 @@ pub fn find_tag_from_str(value: &str) -> Option<MetadataTag> {
 /// Wrapper over [`AvDictionaryMut`] for codec aware tag mapping.
 pub struct MetadataContainer<'a> {
   inner: AvDictionaryMut<'a>,
-  tagger: &'a dyn CodecMetadataTagger,
+  tagger: Tagger,
 }
 
 impl<'a> MetadataContainer<'a> {
-  #[inline]
-  pub const fn new(dst: AvDictionaryMut<'a>, codec_tagger: &'a dyn CodecMetadataTagger) -> Self {
+  pub fn new(context: &'a mut AvOutputContext) -> Self {
+    let tagger = Tagger::from_av_context(&context).unwrap_or_default();
     Self {
-      inner: dst,
-      tagger: codec_tagger,
-    }
-  }
-
-  pub fn from_context(context: &'a mut AvOutputContext) -> Self {
-    let tagger = find_tagger(&context).unwrap_or(AVLIB_TAGGER);
-
-    Self {
-      tagger,
       inner: context.metadata_mut(),
+      tagger,
     }
   }
 
@@ -173,35 +125,5 @@ impl<'a> MetadataContainer<'a> {
     );
     self.push_optional(MetadataTag::Isrc, track.isrc.map(|v| v.to_string()));
     self.set(MetadataTag::TrackNumber, track.no.to_string());
-  }
-}
-
-impl CodecMetadataTagger for VorbisTagger {
-  fn get_name(&self, tag: MetadataTag) -> Option<&str> {
-    if let Ok(tag) = VorbisTag::try_from(tag) {
-      Some(tag.as_str())
-    } else {
-      None
-    }
-  }
-}
-
-impl CodecMetadataTagger for Id3Tagger {
-  fn get_name(&self, tag: MetadataTag) -> Option<&str> {
-    if let Ok(tag) = Id3Tag::try_from(tag) {
-      Some(tag.as_str())
-    } else {
-      None
-    }
-  }
-}
-
-impl CodecMetadataTagger for AvLibTagger {
-  fn get_name(&self, tag: MetadataTag) -> Option<&str> {
-    if let Ok(tag) = AvLibTag::try_from(tag) {
-      Some(tag.as_str())
-    } else {
-      None
-    }
   }
 }

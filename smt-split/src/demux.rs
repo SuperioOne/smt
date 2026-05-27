@@ -134,7 +134,7 @@ impl SplitDemuxer {
         copy_stream_properties(cover, output_cover_stream)?;
       }
 
-      let mut output_metadata = MetadataContainer::from_context(&mut context);
+      let mut output_metadata = MetadataContainer::new(&mut context);
       let input_metadata = input.metadata();
 
       output_metadata.push_from_av_dict(input_metadata.iter());
