@@ -1,10 +1,13 @@
-use super::{demux::SplitDemuxer, error::SplitError};
+use self::demux::SplitDemuxer;
+use crate::error::SplitError;
 use cue_lib::parse::{Cuesheet, CuesheetParser};
 use smt_ffmpeg::{
   avlib_version,
   ffmpeg::{LIBAVCODEC_VERSION_MAJOR, LIBAVFORMAT_VERSION_MAJOR},
 };
 use std::path::{Path, PathBuf};
+
+mod demux;
 
 pub struct CmdSplit<'a> {
   cuesheet: &'a str,

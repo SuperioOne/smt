@@ -13,5 +13,4 @@ publish = false
 clap = { workspace = true, features = ["derive"] }
 clap_complete.workspace = true
 smt-metadata.workspace = true
-smt-split.workspace = true
-smt-parse.workspace = true
+smt-cue.workspace = true

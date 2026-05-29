@@ -7,7 +7,7 @@
 // Disclaimer:
 // Some brain cells were harmed while encoding flacs with proper duration header.
 
-use super::error::SplitError;
+use crate::error::SplitError;
 use cue_lib::{core::CueStr, parse::Cuesheet};
 use smt_common::metadata::MetadataContainer;
 use smt_ffmpeg::{

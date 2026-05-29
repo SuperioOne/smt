@@ -1,11 +1,10 @@
-.TH smt 7 "2026-05-26" "0.1.0" "SMT User Manual"
+.TH smt 7 "2026-05-29" "0.1.0" "SMT User Manual"
 .SH NAME
 smt \- Superior's Music Tools User Manual
 .SH DESCRIPTION
 .BR smt
-is a collection of command-line interface tools primarily designed
-for manipulating audio file metadata, parsing cuesheets, and splitting
-audio files based on cuesheet data.
+is a collection of CLI tools primarily designed for manipulating audio file 
+metadata, parsing cuesheets, and splitting audio files based on cuesheet data.
 
 The currently available tools are:
 
@@ -14,14 +13,11 @@ allbox tab(@);
 lB lB
 l lx.
 Tool@Description
-\fBsmt-parse\fR(1)@T{
-Basic utility for converting and testing CDRWIN's cuesheet files.
+\fBsmt\-cue\fR(1)@T{
+Cuesheet utility tool. It can be used to test cuesheet format, convert cuesheets
+to JSON, and split audio files into individual tracks with metadata support.
 T}
-\fBsmt-split\fR(1)@T{
-Splits audio files into individual tracks and applies all available 
-metadata to each track by using cuesheet.
-T}
-\fBsmt-metadata\fR(1)@T{
+\fBsmt\-metadata\fR(1)@T{
 Editing tool for Vorbis/IDv3 metadata and embedded cover images in audio files.
 T}
 .TE
@@ -44,8 +40,8 @@ From \fIcue_lib\fR documentation:
 
 - ISRC command can appear before, after, in between INDEX commands.
 
-- The FILE command must appear appear before any TRACK command but can appear
-anywhere else.
+- The FILE command must appear before any TRACK command but can appear anywhere
+else.
 
 - The CATALOG command is not limited to 13-digit UPC/EAN format, any valid
 cuesheet text is accepted.
@@ -192,5 +188,4 @@ tag name.
 
 .SH SEE ALSO
 .BR smt-metadata (1),
-.BR smt-parse (1),
-.BR smt-split (1)
+.BR smt-cue (1),

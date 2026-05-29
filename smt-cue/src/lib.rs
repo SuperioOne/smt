@@ -3,6 +3,7 @@ use smt_common::VerboseLevel;
 use std::path::PathBuf;
 
 pub mod command;
+pub mod error;
 
 pub const TOOL_NAME: &'static str = env!("CARGO_PKG_NAME");
 
@@ -35,5 +36,17 @@ pub enum Commands {
     /// Formats JSON output
     #[arg(short, long)]
     pretty_print: bool,
+  },
+  /// Split audio file into tracks via cuesheet
+  Split {
+    /// Root directory for the input file or, FILE path
+    #[arg(short, long)]
+    file_path: Option<PathBuf>,
+    /// Output directory for the split tracks
+    #[arg(short, long)]
+    output_dir: Option<PathBuf>,
+    /// Enables Vorbis metadata comments from remarks
+    #[arg(short, long)]
+    metadata: bool,
   },
 }

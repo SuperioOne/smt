@@ -27,5 +27,4 @@ smt_ffmpeg_sys = { path = "./crates/smt_ffmpeg_sys" }
 smt_ffmpeg_src = { path = "./crates/smt_ffmpeg_src" }
 smt_common = { path = "./crates/smt_common" }
 smt-metadata = { path = "./smt-metadata" }
-smt-split = { path = "./smt-split" }
-smt-parse = { path = "./smt-parse" }
+smt-cue = { path = "./smt-cue" }

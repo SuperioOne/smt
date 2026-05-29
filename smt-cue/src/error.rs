@@ -17,6 +17,31 @@ pub enum SplitError {
   UnknownAudioContainer,
 }
 
+pub enum ConvertError {
+  CueLibError(CueLibError),
+  IOError(std::io::Error),
+  JsonSerializeError(serde_json::error::Error),
+}
+
+impl ErrorFormat for ConvertError {
+  fn fmt(
+    &self,
+    mut f: ErrorFormatter<'_>,
+    input_buffer: &str,
+    verbose_level: VerboseLevel,
+  ) -> std::io::Result<()> {
+    if verbose_level == VerboseLevel::Quiet {
+      Ok(())
+    } else {
+      match self {
+        ConvertError::CueLibError(error) => ErrorFormat::fmt(error, f, input_buffer, verbose_level),
+        ConvertError::IOError(error) => write!(f, "{}", error),
+        ConvertError::JsonSerializeError(error) => write!(f, "{}", error),
+      }
+    }
+  }
+}
+
 impl ErrorFormat for SplitError {
   fn fmt(
     &self,
@@ -58,6 +83,27 @@ impl From<AvError> for SplitError {
 }
 
 impl From<std::io::Error> for SplitError {
+  #[inline]
+  fn from(value: std::io::Error) -> Self {
+    Self::IOError(value)
+  }
+}
+
+impl From<CueLibError> for ConvertError {
+  #[inline]
+  fn from(value: CueLibError) -> Self {
+    Self::CueLibError(value)
+  }
+}
+
+impl From<serde_json::error::Error> for ConvertError {
+  #[inline]
+  fn from(value: serde_json::error::Error) -> Self {
+    Self::JsonSerializeError(value)
+  }
+}
+
+impl From<std::io::Error> for ConvertError {
   #[inline]
   fn from(value: std::io::Error) -> Self {
     Self::IOError(value)

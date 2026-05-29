@@ -1,0 +1,260 @@
+.TH smt-cue 1 "2026-05-29" "0.1.0" "SMT User Manual"
+.SH NAME
+.PP
+smt-cue \- SMT cuesheet utility
+.SH SYNOPSIS
+.PP
+smt-cue [\fB\-i\fR|\fB\-\-input\fR \fI<PATH>\fR]
+        [\fB\-v\fR|\fB\-\-verbose\fR \fI<VERBOSE>\fR]
+        [\fB\-h\fR|\fB\-\-help\fR]
+        [\fB\-V\fR|\fB\-\-version\fR]
+        \fI<COMMAND>\fR
+        [\fI<COMMAND_OPTIONS>\fR]
+
+smt-cue [\fI<OPTIONS>\fR] test
+        [\fB\-h\fR|\fB\-\-help\fR]
+
+smt-cue [\fI<OPTIONS>\fR] convert-json
+        [\fB\-m\fR|\fB\-\-metadata\fR]
+        [\fB\-p\fR|\fB\-\-pretty\-print\fR]
+        [\fB\-o\fR|\fB\-\-output\-file\fR]
+        [\fB\-h\fR|\fB\-\-help\fR]
+
+smt-cue [\fI<OPTIONS>\fR] split
+        [\fB\-m\fR|\fB\-\-metadata\fR]
+        [\fB\-f\fR|\fB\-\-file\-path\fR]
+        [\fB\-o\fR|\fB\-\-output\-dir\fR]
+        [\fB\-h\fR|\fB\-\-help\fR]
+
+.SH DESCRIPTION
+.PP
+.B smt-cue
+provides basic utility for converting, splitting, and testing CDRWIN's cuesheet
+files.
+
+.SS CUEHSHEET PARSING AND TESTING
+.PP
+Cuesheet support is based on CDRWIN's original user manual, for more details see
+\fBsmt\fR(7), or online documentation at \fIhttps://docs.rs/cue_lib\fR.
+
+.SS AUDIO SPLIT
+.PP
+The split operation internally uses \fIlibavformat\fR and \fIlibavcodec\fR,
+enabling support for a wide range of audio codecs and container formats. It is
+specifically designed for splitting audio via cuesheets; for format transcoding,
+use \fBffmpeg\fR(1) instead.
+.PP
+When splitting audio files, it automatically trims track pregaps (INDEX 00), and
+applies all available metadata to each track by using cuesheet.
+
+.SH COMMANDS
+.TS
+tab(@);
+lB lx.
+test@T{
+Verify input cuesheet format.
+T}
+split@T{
+Split audio file into tracks by cuesheet data.
+T}
+convert\-json@T{
+Convert input cuesheet into JSON output.
+T}
+.TE
+
+.SH OPTIONS
+.SS GLOBAL OPTIONS
+.TP
+.BR \-h ", " \-\-help
+Print help menu and exit.
+.TP
+.BR \-V ", " \-\-version
+Print version and exit.
+.TP
+.BR \-i ", " \-\-input
+Set cuesheet input file path. If not set, \fBstdin(3)\fR is used as cuesheet
+input.
+.TP
+.BR \-v ", " \-\-verbose
+Set verbosity level. Allowed values are
+.BR full ", " default ", " quiet
+
+.SS SPLIT OPTIONS
+.TP
+.BR \-f ", " \-\-file-path
+If given path is a file, overrides FILE command with the given path.
+
+If given path is a directory, uses it as a root directory for cuesheet FILE
+command.
+
+By default, uses cuesheet's parent directory.
+.TP
+.BR \-o ", " \-\-output-dir
+Set output directory for the splitted tracks.
+
+This option automatically creates parent directories if they do not exists.
+
+By default, uses current directory.
+.TP
+.BR \-m ", " \-\-metadata
+Enable additional Vorbis comments from cuesheet remarks.
+.IP
+For more details about how Vorbis comments are parsed from remarks, see
+\fBsmt\fR(7).
+
+.SS CONVERT-JSON OPTIONS
+.TP
+.BR \-o ", " \-\-output
+Set JSON output file path. If not set, \fBstdout(3)\fR is used as output.
+.TP
+.BR \-m ", " \-\-metadata
+Enable parsing of additional Vorbis comments from cuesheet remarks.
+.IP
+For more details about how Vorbis comments are parsed from remarks see 
+\fBsmt\fR(7).
+.TP
+.BR \-p ", " \-\-pretty-print
+Format JSON output.
+
+.SH EXAMPLES
+.SS SPLIT AUDIO
+.TP
+Basic usage:
+.TS
+tab(@);
+lB lx.
+CUE@T{
+"./example.cue"
+T}
+AUDIO@T{
+"./example.wav"
+T}
+.TE
+
+.EX
+smt-cue \-i example.cue split
+.EE
+
+.TP
+Splitting from different directory:
+.TS
+tab(@);
+lB lx.
+CUE@T{
+"/path/to/example.cue"
+T}
+AUDIO@T{
+"/path/to/example.wav"
+T}
+.TE
+
+.EX
+smt-cue \-i /path/to/example.cue split
+.EE
+
+.TP
+Overriding FILE directory:
+.TS
+tab(@);
+lB lx.
+CUE@T{
+"/path/to/example.cue"
+T}
+AUDIO@T{
+"/path/different/example.wav"
+T}
+.TE
+
+.EX
+smt-cue \-i /path/to/example.cue split \-f /path/different/
+.EE
+
+.TP
+Overriding FILE path:
+.TS
+tab(@);
+lB lx.
+CUE@T{
+"/path/to/example.cue"
+T}
+AUDIO@T{
+"/path/different/target.flac"
+T}
+.TE
+
+.EX
+smt-cue \-i /path/to/example.cue split \-f /path/different/target.flac
+.EE
+
+.TP
+Custom output directory:
+.EX
+smt-cue \-i example.cue split \-o /tmp/album/
+.EE
+
+.SS CONVERT CUESHEET TO JSON
+.TP
+Cuesheet with Vorbis metadata and pretty print enabled:
+
+.EX
+smt-cue \-i example.cue convert-json \-mp
+.EE
+
+.TP
+Using \fBjq\fR(1) to query track titles:
+
+.EX
+smt-cue \-i example.cue convert-json \-m | jq '.tracks[].title'
+.EE
+
+.SS TEST CUESHEET
+
+.TP
+Using an input file:
+
+.EX
+smt-cue -i example.cue test
+.EE
+
+.TP
+Piping input file:
+
+.EX
+cat example.cue | smt-cue test
+.EE
+
+.TP
+Getting detailed parse errors:
+
+.EX
+smt-cue --verbose full -i example.cue test
+.EE
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful program execution.
+.TP
+.B 1
+Usage, encoder, decoder, or invalid cuesheet errors.
+
+.SH BUGS
+
+.B smt-cue
+is primarily tested against FFmpeg version n8.1.1. Depending on how the tool
+was built, the linked libavformat and libavcodec libraries may missing certain
+encoders, different behavior, or contain other kind of bugs.
+
+.SH REPORTING BUGS
+.TS
+tab(%);
+lB lx.
+Codeberg%https://codeberg.org/SuperiorOne/smt/issues
+Github%https://github.com/SuperioOne/smt/issues
+Email%pm@smdd.dev
+.TE
+
+.SH SEE ALSO
+.BR smt (7),
+.BR jq (1),
+.BR ffmpeg (1)

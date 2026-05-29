@@ -8,8 +8,7 @@ struct ToolParseError;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum SmtTool {
   Metadata,
-  Split,
-  Parse,
+  Cue,
 }
 
 #[derive(Parser, Debug)]
@@ -26,8 +25,7 @@ fn main() {
 
   let (name, mut command) = match args.tool {
     SmtTool::Metadata => (smt_metadata::TOOL_NAME, smt_metadata::Args::command()),
-    SmtTool::Split => (smt_split::TOOL_NAME, smt_split::Args::command()),
-    SmtTool::Parse => (smt_parse::TOOL_NAME, smt_parse::Args::command()),
+    SmtTool::Cue => (smt_cue::TOOL_NAME, smt_cue::Args::command()),
   };
 
   generate(shell, &mut command, name, &mut io::stdout());
@@ -38,9 +36,8 @@ impl FromStr for SmtTool {
 
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     const TOOLS: &'static [(SmtTool, &'static str)] = &[
-      (SmtTool::Split, smt_split::TOOL_NAME),
+      (SmtTool::Cue, smt_cue::TOOL_NAME),
       (SmtTool::Metadata, smt_metadata::TOOL_NAME),
-      (SmtTool::Parse, smt_parse::TOOL_NAME),
     ];
 
     for (variant, name) in TOOLS {
@@ -57,8 +54,7 @@ impl core::fmt::Display for SmtTool {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       SmtTool::Metadata => f.write_str(smt_metadata::TOOL_NAME),
-      SmtTool::Split => f.write_str(smt_split::TOOL_NAME),
-      SmtTool::Parse => f.write_str(smt_parse::TOOL_NAME),
+      SmtTool::Cue => f.write_str(smt_cue::TOOL_NAME),
     }
   }
 }

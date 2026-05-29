@@ -1,5 +1,5 @@
 [package]
-name = "smt-split"
+name = "smt-cue"
 description = "splits common audio formats by using cuesheet information"
 authors.workspace = true
 documentation.workspace = true
@@ -19,4 +19,6 @@ vendored_dynamic = [ "smt_ffmpeg/vendored_dynamic" ]
 clap.workspace = true
 smt_ffmpeg.workspace = true
 smt_common.workspace = true
-cue_lib = { workspace = true, features = ["metadata", "alloc"] }
+cue_lib = { workspace = true, features = ["metadata", "alloc", "serde"] }
+serde.workspace = true
+serde_json.workspace = true
