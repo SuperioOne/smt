@@ -7,7 +7,7 @@ use smt_common::{Command, metadata::find_tag_from_str};
 use std::{
   env,
   fs::{self, File, OpenOptions},
-  io::{self, BufRead, BufReader, BufWriter, Seek, Write as _},
+  io::{self, BufRead, BufReader, BufWriter, IsTerminal, Read, Seek, Write as _},
   path::{Path, PathBuf},
   process,
   str::FromStr,
@@ -35,9 +35,81 @@ struct EditMessage {
   io_time: SystemTime,
 }
 
-struct EditMessageReader<'a> {
-  reader: BufReader<&'a File>,
+struct EditMessageReader<T>
+where
+  T: Read,
+{
+  reader: BufReader<T>,
   line_buf: String,
+}
+
+impl<P> CmdTagEdit<P>
+where
+  P: AsRef<Path>,
+{
+  pub fn new(path: P) -> Self {
+    let editor = env::var(ENV_EDITOR).map_or_else(|_| DEFAULT_EDITOR.into(), |v| PathBuf::from(v));
+    Self { path, editor }
+  }
+
+  #[inline]
+  pub fn set_editor<E>(&mut self, editor: E) -> &mut Self
+  where
+    E: AsRef<Path>,
+  {
+    self.editor = editor.as_ref().to_path_buf();
+    self
+  }
+}
+
+impl<P> Command for CmdTagEdit<P>
+where
+  P: AsRef<Path>,
+{
+  type Error = MetadataError;
+
+  fn run(self) -> Result<(), Self::Error> {
+    let mut context = MetadataEditContext::open(self.path.as_ref())?;
+
+    if io::stdin().is_terminal() {
+      let editor = find_editor(self.editor)?;
+      let editmsg = EditMessage::open(&context)?;
+      let mut metadata = context.metadata_mut();
+
+      match process::Command::new(editor).arg(&editmsg.path).status() {
+        Ok(_) => {
+          if let Ok(true) = editmsg.is_modified() {
+            let mut reader = editmsg.reader();
+
+            while let Some((tag, value)) = reader.next()? {
+              _ = metadata.push(tag, value);
+            }
+
+            context.commit()?;
+            Ok(())
+          } else {
+            Err(EditErrorKind::EditDiscarded.into())
+          }
+        }
+        Err(err) => Err(err.into()),
+      }
+    } else {
+      let mut input = String::new();
+      io::stdin().read_to_string(&mut input)?;
+      let mut reader = EditMessageReader {
+        reader: BufReader::new(input.as_bytes()),
+        line_buf: String::new(),
+      };
+      let mut metadata = context.metadata_mut();
+
+      while let Some((tag, value)) = reader.next()? {
+        _ = metadata.push(tag, value);
+      }
+
+      context.commit()?;
+      Ok(())
+    }
+  }
 }
 
 fn find_editor<P>(editor: P) -> Result<PathBuf, MetadataError>
@@ -69,61 +141,6 @@ where
       }
 
       Err(EditErrorKind::EditorNotAvailable(path.to_owned()).into())
-    }
-  }
-}
-
-impl<P> CmdTagEdit<P>
-where
-  P: AsRef<Path>,
-{
-  pub fn new(path: P) -> Self {
-    let editor = env::var(ENV_EDITOR).map_or_else(|_| DEFAULT_EDITOR.into(), |v| PathBuf::from(v));
-    Self { path, editor }
-  }
-
-  #[inline]
-  pub fn set_editor<E>(&mut self, editor: E) -> &mut Self
-  where
-    E: AsRef<Path>,
-  {
-    self.editor = editor.as_ref().to_path_buf();
-    self
-  }
-}
-
-impl<P> Command for CmdTagEdit<P>
-where
-  P: AsRef<Path>,
-{
-  type Error = MetadataError;
-
-  fn run(self) -> Result<(), Self::Error> {
-    let mut context = MetadataEditContext::open(self.path.as_ref())?;
-    let editor = find_editor(self.editor)?;
-    let editmsg = EditMessage::open(&context)?;
-
-    match process::Command::new(editor).arg(&editmsg.path).status() {
-      Ok(_) => {
-        if let Ok(true) = editmsg.is_modified() {
-          let mut metadata = context.metadata_mut();
-          let mut reader = editmsg.reader();
-
-          while let Some((tag, value)) = reader.next()? {
-            _ = metadata.push(tag, value);
-          }
-
-          context.commit()?;
-          Ok(())
-        } else {
-          context.discard()?;
-          Err(EditErrorKind::EditDiscarded.into())
-        }
-      }
-      Err(err) => {
-        context.discard()?;
-        Err(err.into())
-      }
     }
   }
 }
@@ -192,10 +209,10 @@ impl EditMessage {
 
   fn is_modified(&self) -> Result<bool, io::Error> {
     let modified = self.fd.metadata()?.modified()?;
-    Ok(modified.gt(&self.io_time))
+    Ok(modified > self.io_time)
   }
 
-  pub fn reader(&self) -> EditMessageReader<'_> {
+  pub fn reader(&self) -> EditMessageReader<&File> {
     EditMessageReader {
       reader: BufReader::new(&self.fd),
       line_buf: String::new(),
@@ -203,13 +220,10 @@ impl EditMessage {
   }
 }
 
-impl Drop for EditMessage {
-  fn drop(&mut self) {
-    _ = fs::remove_file(&self.path);
-  }
-}
-
-impl EditMessageReader<'_> {
+impl<T> EditMessageReader<T>
+where
+  T: Read,
+{
   pub fn next(&mut self) -> Result<Option<(VorbisTag, &str)>, MetadataError> {
     loop {
       self.line_buf.clear();
@@ -243,5 +257,11 @@ impl EditMessageReader<'_> {
         }
       }
     }
+  }
+}
+
+impl Drop for EditMessage {
+  fn drop(&mut self) {
+    _ = fs::remove_file(&self.path);
   }
 }

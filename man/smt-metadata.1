@@ -1,4 +1,4 @@
-.TH smt-metadata 1 "2026-05-29" "0.1.0" "SMT User Manual"
+.TH smt-metadata 1 "2026-05-30" "0.1.0" "SMT User Manual"
 .SH NAME
 .PP
 smt-metadata \- SMT metadata editor
@@ -179,7 +179,14 @@ Edit all tags with different text editor:
 smt-metadata /path/to/audio.flac tag edit --editor nvim
 .EE
 
-.SS 
+.TP
+Edit all tags by piping edit message content:
+
+.EX
+cat /path/to/metadata.txt | smt-metadata /path/to/audio.flac tag edit
+.EE
+
+.SS
 Cover image operations
 
 .TP
@@ -215,6 +222,38 @@ Export cover image to specific path:
 
 .EX
 smt-metadata /path/to/audio.flac cover export -o /images/my-cover.jpg
+.EE
+
+.SH METADATA EDIT MESSAGE FORMAT
+.PP
+.B smt-metadata tag edit
+uses a simple line-based text format where each line consists of a tag and a
+value separated by a colon. Tag names are case-insensitive, multiple tags are
+supported.
+
+.PP
+Lines starting with a # symbol are comments and are ignored, but inline comments
+are not supported and remain as value text.
+
+.SS EXAMPLE EDIT MESSAGE
+.EX
+# This is a comment
+
+# Leading and trailing whitespaces on tag and value are trimmed
+  ALBUMARTIST   :     yonige
+
+# Duplicate tag names are read as multi-value metadata.
+ARTIST:Ushimaru Arisa
+ARTIST:Gokkin
+
+# Tag names are case-insensitive
+AlBUm  : Sanzen Sekai
+
+# Inline comments ARE NOT supported
+COMMENT  : # This is a value not a comment
+
+# Additional colons do not require escaping
+TITLE  : :text:
 .EE
 
 .SH EXIT STATUS

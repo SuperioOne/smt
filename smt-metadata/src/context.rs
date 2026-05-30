@@ -106,18 +106,10 @@ where
   }
 
   pub fn commit(self) -> Result<(), MetadataError> {
-    let Self {
-      out_context,
-      in_context,
-      in_path,
-      out_tmp_path,
-      cover_src,
-    } = self;
-
-    match copy_packets(in_context, out_context, cover_src) {
-      Ok(()) => match out_tmp_path.try_exists()? {
+    match copy_packets(self.in_context, self.out_context, self.cover_src) {
+      Ok(()) => match self.out_tmp_path.try_exists()? {
         true => {
-          fs::rename(out_tmp_path, in_path)?;
+          fs::rename(&self.out_tmp_path, &self.in_path)?;
           Ok(())
         }
         false => Err(
@@ -129,15 +121,10 @@ where
         ),
       },
       Err(err) => {
-        _ = fs::remove_file(out_tmp_path);
+        _ = fs::remove_file(&self.out_tmp_path);
         Err(err)
       }
     }
-  }
-
-  pub fn discard(self) -> Result<(), MetadataError> {
-    _ = fs::remove_file(self.out_tmp_path);
-    Ok(())
   }
 }
 
